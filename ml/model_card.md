@@ -10,7 +10,7 @@
 
 ## Data
 - Source: `fact_sales` joined with `dim_date` / `dim_product`, aggregated weekly.
-- Series: 4 regions × 5 categories = 20 series, ~78 weeks each.
+- Series: 4 regions × 5 categories = 20 series, 78 weeks each.
 - Split: chronological — last 20 weeks per series held out (one-step-ahead
   backtest, 400 validation points).
 
