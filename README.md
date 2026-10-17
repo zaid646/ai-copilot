@@ -9,15 +9,15 @@ AI-native analytics copilot that answers **"Why did sales drop in the West regio
 │   Streamlit  │──────│   FastAPI (8000) │──────│  LangGraph      │
 │   UI (8501)  │ JWT  │  /ask /trace     │      │  Supervisor     │
 └──────────────┘      └─────────┬────────┘      │  (planner →     │
-                                │               │   sql_agent →   │
-┌──────────────┐               │               │   graphrag_agent │
-│   Postgres   │◄──────────────┘               │   model_agent → │
-│  fact_sales  │──────────────────────────────►│   action_agent  │
-│   fact_fin   │      structured KPI           │   critic_agent  │
-└──────────────┘      computation             └─────────┬─────────┘
-                                                        │
-┌──────────────┐                                        │
-│    Neo4j     │────────────────────────────────────────┘
+                                │               │  sql_agent →    │
+┌──────────────┐                │               │  graphrag_agent │
+│   Postgres   │◄───────────────┘               │  model_agent →  │
+│  fact_sales  │──────────────────────────────► │  action_agent   │
+│   fact_fin   │      structured KPI            │  critic_agent   │
+└──────────────┘      computation               └─────────┬───────┘
+                                                          │
+┌──────────────┐                                          │
+│    Neo4j     │──────────────────────────────────────────┘
 │  GraphRAG    │  policy chunks (retail/finance)
 └──────────────┘                                        │
                                                         ▼
