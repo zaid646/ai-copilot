@@ -1,6 +1,16 @@
 # Enterprise Analytics Copilot
 
-AI-native analytics copilot that answers **"Why did sales drop in the West region last quarter, and what should we do?"** end-to-end — structured SQL KPIs, unstructured policy document retrieval (GraphRAG), demand forecasting, multi-agent LangGraph supervision, fail-closed guardrails, and full observability — with every step traceable and auditable.
+An AI-native analytics copilot that bridges structured data and unstructured enterprise policies. 
+
+Instead of hardcoded dashboards, users can ask any natural language question and the system will autonomously route the request to the correct tools to find the answer.
+
+### What it can do:
+*   **Structured Data (SQL):** *"Why did sales drop in the West region last quarter?"*
+*   **Unstructured Policy (GraphRAG):** *"What are the finance capitalization thresholds?"*
+*   **Predictive ML:** *"Forecast demand for the next quarter."*
+
+### How it works:
+The backend uses a multi-agent **LangGraph** supervisor to orchestrate **SQL KPI computation**, **Neo4j GraphRAG retrieval**, and **PyTorch forecasting**. It is built for production with fail-closed **guardrails**, full **Prometheus/Grafana observability**, and a traceable audit log for every single step.
 
 ## Architecture
 
