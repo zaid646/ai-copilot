@@ -61,6 +61,13 @@ TOOLS: dict[str, dict[str, Any]] = {
             "properties": {
                 "query": {"type": "string"},
                 "top_k": {"type": "integer", "minimum": 1, "maximum": 20},
+                "source_filter": {
+                    "type": "string",
+                    "description": (
+                        "Restrict retrieval to one source document. Use 'Retail' for the "
+                        "retail/produce manual or 'Finance' for the budget/accounting manual."
+                    ),
+                },
             },
             "required": ["query"],
         },

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from agents.domain import classify_domain, classify_intent
 from agents.nodes.base import llm_json
 from agents.tracelib import traced
 
@@ -11,11 +12,17 @@ from agents.tracelib import traced
 def planner_node(state: dict[str, Any]) -> dict[str, Any]:
     question = state.get("question", "")
     history = state.get("history", [])
+    # Deterministic domain/intent up front so the supervisor and retrieval
+    # nodes agree without an extra LLM round-trip.
+    domain = classify_domain(question)
+    intent = classify_intent(question)
     data = llm_json(
         "planner",
         {
             "question": question,
             "history": history,
+            "domain": domain,
+            "intent": intent,
         },
     )
     steps = data.get("steps", []) if isinstance(data, dict) else []
@@ -31,6 +38,8 @@ def planner_node(state: dict[str, Any]) -> dict[str, Any]:
                 }
             )
     return {
+        "domain": domain,
+        "intent": intent,
         "plan": valid,
         "plan_idx": 0,
         "scratchpad": list(state.get("scratchpad", []))

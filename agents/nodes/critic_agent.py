@@ -29,14 +29,40 @@ def critic_agent_node(state: dict[str, Any]) -> dict[str, Any]:
     iteration = int(state.get("iteration", 0))
     max_it = int(state.get("max_iterations", 8))
 
-    # Deterministic checks
+    # Deterministic grounding checks. These are authoritative: an answer that is
+    # non-empty, cites a page that actually came back from retrieval, and (for a
+    # retail question) is grounded in at least one retail-manual chunk passes —
+    # regardless of the LLM critic's phrasing nits, which stay as advisory issues.
     issues = list(out.get("issues", [])) if isinstance(out, dict) else []
-    if docs_results and not (state.get("citations") or []):
-        issues.append("Missing citations despite available policy docs")
-        decision = "revise" if iteration < max_it - 1 else "pass"  # don't loop forever
-    if not state.get("answer"):
+    domain = state.get("domain") or "retail"
+    answer = state.get("answer", "")
+    citations = state.get("citations") or []
+    evidence_pages = {r.get("page") for r in docs_results}
+    citation_grounded = any(c.get("page") in evidence_pages for c in citations)
+
+    hard_problem = False
+    if not answer:
         issues.append("Empty answer")
-        decision = "revise"
+        hard_problem = True
+    if docs_results and not citations:
+        issues.append("Missing citations despite available policy docs")
+        hard_problem = True
+    if docs_results and citations and not citation_grounded:
+        issues.append("Citations do not match retrieved evidence pages")
+        hard_problem = True
+    if domain == "retail":
+        has_retail_chunk = any(
+            "retail" in str(r.get("document", "")).lower() for r in docs_results
+        )
+        if not has_retail_chunk:
+            issues.append("No retail-manual chunk retrieved for a retail-domain question")
+            hard_problem = True
+
+    if hard_problem:
+        # Give the loop a bounded chance to fix grounding; then accept.
+        decision = "revise" if iteration < max_it - 1 else "pass"
+    else:
+        decision = "pass"
 
     out.update({"issues": issues, "decision": decision})
 

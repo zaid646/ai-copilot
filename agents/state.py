@@ -33,6 +33,8 @@ class AgentState(TypedDict, total=False):
     citations: list[dict[str, Any]]
 
     # --- planning / working memory ---
+    domain: str  # retail | finance (drives retrieval source filter)
+    intent: str  # free-form intent label, e.g. "sales_drop", "forecast"
     plan: list[PlanStep]
     plan_idx: int
     current_step: PlanStep

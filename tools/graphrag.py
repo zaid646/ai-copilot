@@ -59,6 +59,11 @@ def _lucene_query(text: str) -> str:
     return " OR ".join(tokens)
 
 
+def _filter_by_source(hits: list[dict[str, Any]], needle: str) -> list[dict[str, Any]]:
+    """Keep only hits whose source document title contains `needle` (case-insensitive)."""
+    return [h for h in hits if needle in str(h.get("document") or "").lower()]
+
+
 def _rrf(rank_lists: list[list[dict[str, Any]]], k: int = RRF_K) -> list[dict[str, Any]]:
     fused: dict[str, float] = {}
     by_id: dict[str, dict[str, Any]] = {}
@@ -75,13 +80,16 @@ def _rrf(rank_lists: list[list[dict[str, Any]]], k: int = RRF_K) -> list[dict[st
     return out
 
 
-def graphrag_search(query: str, top_k: int = 5) -> dict[str, Any]:
+def graphrag_search(
+    query: str, top_k: int = 5, source_filter: str | None = None
+) -> dict[str, Any]:
     start = time.perf_counter()
     try:
         q = (query or "").strip()
         if not q:
             return err(ErrorCode.INPUT_INVALID, "query is required")
         top_k = max(1, min(int(top_k), MAX_TOP_K))
+        source_needle = (source_filter or "").strip().lower() or None
 
         try:
             vec = embed_texts([q], kind="query")[0]
@@ -115,9 +123,16 @@ def graphrag_search(query: str, top_k: int = 5) -> dict[str, Any]:
     finally:
         TOOL_LATENCY.labels(tool="graphrag_search").observe(time.perf_counter() - start)
 
+    if source_needle:
+        vector_hits = _filter_by_source(vector_hits, source_needle)
+        fulltext_hits = _filter_by_source(fulltext_hits, source_needle)
+
     if not vector_hits and not fulltext_hits:
         TOOL_CALLS.labels(tool="graphrag_search", status="empty").inc()
-        return err(ErrorCode.NO_RESULTS, "no matching policy chunks")
+        msg = "no matching policy chunks"
+        if source_needle:
+            msg = f"no matching policy chunks for source_filter={source_filter!r}"
+        return err(ErrorCode.NO_RESULTS, msg)
 
     fused = _rrf([vector_hits, fulltext_hits])[:top_k]
     vector_score = {h["id"]: h["score"] for h in vector_hits}
@@ -136,6 +151,7 @@ def graphrag_search(query: str, top_k: int = 5) -> dict[str, Any]:
     TOOL_CALLS.labels(tool="graphrag_search", status="success").inc()
     return ok({
         "query": q,
+        "source_filter": source_filter,
         "count": len(results),
         "strategy": "hybrid_rrf",
         "vector_hits": len(vector_hits),
