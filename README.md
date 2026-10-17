@@ -61,12 +61,12 @@ make batch
 
 # 6. Open Streamlit at http://localhost:8501
 #    Default creds: analyst / analyst123  |  admin / admin123
-make frontend
+#    (`make up` already starts the Streamlit container.)
 ```
 
 Run checks:
 ```bash
-make test   # pytest — 11/11 pass
+make test   # pytest — 10/10 pass
 make lint   # ruff — clean
 make api    # uvicorn on :8000
 ```
@@ -146,4 +146,4 @@ Thresholds: hard-fail (guardrail block rate 100%, factual citation required) + s
 - **ML / forecasting** — LSTM weekly demand model with train/evaluate/serve pipeline and model card
 - **AI safety / guardrails** — fail-closed ingress/egress policy engine, prompt-injection detection, PII redaction, citation grounding, full audit log
 - **Observability / evals** — Prometheus + Grafana, LLM-as-judge golden set at temperature=0, hard-fail/soft-warn thresholds, per-request trace IDs
-- **CI / shipping** — ruff lint, pytest suite (11/11), Makefile targets, Docker images for API + frontend, GitHub Actions ready
+- **CI / shipping** — ruff lint, pytest suite (10/10), Makefile targets, Docker images for API + frontend, GitHub Actions ready
