@@ -1,0 +1,27 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+*.pt
+*.joblib
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+build/
+*.egg-info/
+evals/results/
+evidence/tmp/
+.DS_Store
+
+# runtime / container data (never commit)
+*.db
+cache/
+.cache/
+neo4j/
+grafana/data/
+prometheus/data/
+ml/checkpoints/
+ml/artifacts/
+docker/volumes/
+*.log

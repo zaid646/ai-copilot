@@ -1,0 +1,81 @@
+name: ai-copilot
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aic-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aiocopilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aiocopilot}
+      POSTGRES_DB: ${POSTGRES_DB:-aiocopilot}
+      TZ: UTC
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aiocopilot} -d ${POSTGRES_DB:-aiocopilot}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 512m
+
+  neo4j:
+    image: neo4j:5.26
+    container_name: aic-neo4j
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-aiocopilot}
+      NEO4J_server_memory_heap_initial__size: 512m
+      NEO4J_server_memory_heap_max__size: 1g
+      NEO4J_server_memory_pagecache_size: 512m
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4jdata:/data
+      - neo4jlogs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    mem_limit: 2g
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: aic-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - promdata:/prometheus
+    mem_limit: 256m
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: aic-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - prometheus
+    mem_limit: 256m
+
+volumes:
+  pgdata:
+  neo4jdata:
+  neo4jlogs:
+  promdata:
+  grafanadata:

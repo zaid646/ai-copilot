@@ -1,0 +1,18 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "copilot-api"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+
+  - job_name: "model-service"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["host.docker.internal:8001"]
+
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
