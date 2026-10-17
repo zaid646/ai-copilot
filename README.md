@@ -9,15 +9,15 @@ AI-native analytics copilot that answers **"Why did sales drop in the West regio
 │   Streamlit  │──────│   FastAPI (8000) │──────│  LangGraph      │
 │   UI (8501)  │ JWT  │  /ask /trace     │      │  Supervisor     │
 └──────────────┘      └─────────┬────────┘      │  (planner →     │
-                                │               │   sql_agent →   │
-┌──────────────┐               │               │   graphrag_agent │
-│   Postgres   │◄──────────────┘               │   model_agent → │
-│  fact_sales  │──────────────────────────────►│   action_agent  │
-│   fact_fin   │      structured KPI           │   critic_agent  │
-└──────────────┘      computation             └─────────┬─────────┘
-                                                        │
-┌──────────────┐                                        │
-│    Neo4j     │────────────────────────────────────────┘
+                                │               │  sql_agent →    │
+┌──────────────┐                │               │  graphrag_agent │
+│   Postgres   │◄───────────────┘               │  model_agent →  │
+│  fact_sales  │──────────────────────────────► │  action_agent   │
+│   fact_fin   │      structured KPI            │  critic_agent   │
+└──────────────┘      computation               └─────────┬───────┘
+                                                          │
+┌──────────────┐                                          │
+│    Neo4j     │──────────────────────────────────────────┘
 │  GraphRAG    │  policy chunks (retail/finance)
 └──────────────┘                                        │
                                                         ▼
@@ -29,16 +29,6 @@ AI-native analytics copilot that answers **"Why did sales drop in the West regio
 ```
 
 Postgres holds structured sales/finance facts. Neo4j holds GraphRAG policy-chunk retrieval. FastAPI is the REST backend with JWT RBAC. Streamlit is the chat UI. LangGraph orchestrates the agent loop (planner → tool agents → critic → synthesis). vLLM on a remote RTX 4090 serves chat + embeddings via an SSH tunnel.
-
-## Demo GIF
-
-Add `docs/demo.gif` here — a 30–60 second screen recording of:
-1. Login as analyst → ask the pilot question
-2. Answer with citations + KPI cards populate
-3. Trace tab: node-by-node latencies
-4. History tab → open trace
-5. Logout → login as admin → KPI chart renders
-6. Guardrail block banner on an injection prompt
 
 ## Quickstart
 
@@ -130,7 +120,7 @@ Thresholds: hard-fail (guardrail block rate 100%, factual citation required) + s
 | Grafana datasources configured | ![Grafana](evidence/telemetry/08-grafana-datasources.png) |
 | Prometheus `guardrail_blocks_total` metric | ![Prometheus](evidence/telemetry/09-prometheus-metrics.png) |
 
-## Limitations
+## Limitations & Architectural Trade-offs
 
 - **8-case golden set** — pilot-scoped evaluation; production would expand to ~25+ hand-labeled questions
 - **Pilot scope** — optimized for the West-region sales-drop question; other regions/quarters use the same paths but may need threshold tuning
