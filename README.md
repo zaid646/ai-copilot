@@ -71,6 +71,7 @@ make api    # uvicorn on :8000
 | **Forecast model** | LSTM weekly model, MAE 288.39 vs baseline 343.24 (+16.0%) |
 | **Guardrails (fail-closed)** | Prompt-injection, off-domain, PII redaction, SQL-write block, citation grounding, toxicity, secret redaction — every decision logged to `guardrail_events` |
 | **Observability** | Prometheus metrics (`guardrail_blocks_total`, `agent_runs_total`, `copilot_requests_total`), Grafana datasources, trace-per-request via `X-Trace-Id` |
+| **Memory** | Conversation and trace memory (`agents/memory.py`), persisted across requests |
 
 ## Eval Scorecard
 
