@@ -10,7 +10,9 @@ Instead of hardcoded dashboards, users can ask any natural language question and
 *   **Predictive ML:** *"Forecast demand for the next quarter."*
 
 ### How it works:
-The backend uses a multi-agent **LangGraph** supervisor to orchestrate **SQL KPI computation**, **Neo4j GraphRAG retrieval**, and **PyTorch forecasting**. It is built for production with fail-closed **guardrails**, full **Prometheus/Grafana observability**, and a traceable audit log for every single step.
+The backend uses a multi-agent **LangGraph** supervisor to orchestrate **SQL KPI computation**,
+**Neo4j GraphRAG retrieval**, and **PyTorch forecasting**,
+It is built for production with fail-closed **guardrails**, full **Prometheus/Grafana observability**, and a traceable audit log for every single step.
 
 ## Architecture
 
