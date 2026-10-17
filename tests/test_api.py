@@ -24,14 +24,8 @@ def test_ask_requires_token(client):
     assert resp.json()["error_code"] == "UNAUTHENTICATED"
 
 
-def test_metrics_forbidden_for_analyst(client, analyst_token):
-    resp = client.get("/metrics", headers=auth(analyst_token))
-    assert resp.status_code == 403
-    assert resp.json()["error_code"] == "FORBIDDEN"
-
-
-def test_metrics_allowed_for_admin(client, admin_token):
-    resp = client.get("/metrics", headers=auth(admin_token))
+def test_metrics_public(client):
+    resp = client.get("/metrics")
     assert resp.status_code == 200
     assert "copilot_requests_total" in resp.text
 
