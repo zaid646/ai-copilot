@@ -176,10 +176,25 @@ async def ask(
     elapsed_ms = int((time.perf_counter() - start) * 1000)
 
     answer = final.get("answer", "") or ""
-    citations = final.get("citations", []) or []
     domain = final.get("domain")
+    # Determine evidence source from the final state so the egress guardrail
+    # only enforces citations for document-grounded answers (SQL answers have
+    # no chunks to cite).
+    evidence = final.get("evidence", {}) or {}
+    evidence_keys = set(evidence.get("evidence_keys", []) or [])
+    sql_keys = {"kpi", "breakdown", "forecast", "model"}
+    docs = evidence.get("docs") or {}
+    docs_results = docs.get("results", []) if isinstance(docs, dict) else []
+    if evidence_keys.intersection(sql_keys):
+        answer_source = "sql"
+    elif evidence_keys or docs_results:
+        answer_source = "retrieval"
+    else:
+        answer_source = "sql"
     # --- egress guardrail ---
-    egress = egress_check(answer, trace_id, citations=citations, domain=domain)
+    # Pass retrieved doc pages (not just the LLM's citation list) so the
+    # groundedness check compares against what was actually retrieved.
+    egress = egress_check(answer, trace_id, citations=docs_results, domain=domain, source=answer_source)
     if egress.get("action") == "blocked":
         raise HTTPException(status_code=400, detail=f"blocked by guardrail: {egress['rule']}")
     if egress.get("action") == "redacted":

@@ -331,8 +331,11 @@ def _check_toxicity(answer: str) -> dict[str, Any] | None:
     return None
 
 
-def _check_citations(answer: str, citations: list[dict[str, Any]] | None) -> dict[str, Any] | None:
+def _check_citations(answer: str, citations: list[dict[str, Any]] | None, source: str | None) -> dict[str, Any] | None:
     if not settings.guardrail_citation_required:
+        return None
+    # SQL-grounded answers have no document chunks to cite — skip citation check.
+    if source == "sql":
         return None
     if not _looks_factual(answer):
         return None
@@ -354,11 +357,11 @@ def _check_citations(answer: str, citations: list[dict[str, Any]] | None) -> dic
     return None
 
 
-def _egress_subchecks(answer: str, citations: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
+def _egress_subchecks(answer: str, citations: list[dict[str, Any]] | None, source: str | None) -> list[dict[str, Any]]:
     verdicts: list[dict[str, Any]] = []
     checks = [
         _check_sql_write(answer),
-        _check_citations(answer, citations),
+        _check_citations(answer, citations, source),
         _check_toxicity(answer),
         _check_secrets(answer),
     ]
@@ -373,15 +376,18 @@ def egress_check(
     trace_id: str | None = None,
     citations: list[dict[str, Any]] | None = None,
     domain: str | None = None,
+    source: str | None = None,
 ) -> dict[str, Any]:
     """Validate an outgoing answer; redact secrets or block policy violations.
 
     `citations` is the list of retrieved chunk dicts (each with `page`) used for
     citation grounding. `domain` is reserved for future per-domain policy.
+    `source` is "sql" | "retrieval" | "mixed" | None; citation enforcement only
+    applies to retrieval-grounded answers (SQL answers have no chunks to cite).
     """
     a = answer or ""
     try:
-        verdicts = _egress_subchecks(a, citations)
+        verdicts = _egress_subchecks(a, citations, source)
         if not verdicts:
             verdict = {"action": "passed", "rule": "egress_default", "reason": ""}
         else:
