@@ -40,7 +40,12 @@ Instead of hardcoded dashboards, users can ask any natural language question and
                                               └─────────────────┘
 ```
 
-Postgres holds structured sales/finance facts. Neo4j holds GraphRAG policy-chunk retrieval. FastAPI is the REST backend with JWT RBAC. Streamlit is the chat UI. LangGraph orchestrates the agent loop (planner → tool agents → critic → synthesis). vLLM on a remote RTX 4090 serves chat + embeddings via an SSH tunnel.
+* Postgres holds structured sales/finance facts.
+* Neo4j holds GraphRAG policy-chunk retrieval.
+* FastAPI is the REST backend with JWT RBAC.
+* Streamlit is the chat UI.
+* LangGraph orchestrates the agent loop (planner → tool agents → critic → synthesis).
+* vLLM on a remote RTX 4090 serves chat + embeddings via an SSH tunnel.
 
 ## Quickstart
 
