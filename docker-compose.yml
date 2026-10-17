@@ -73,9 +73,56 @@ services:
       - prometheus
     mem_limit: 256m
 
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: aic-api
+    environment:
+      # Container networking: reach sibling services by name, and the host
+      # (LLM tunnel on 8100/8101) via host.docker.internal.
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      NEO4J_URI: bolt://neo4j:7687
+      CHAT_PROVIDER: ${CHAT_PROVIDER:-openai_compat}
+      EMBED_PROVIDER: ${EMBED_PROVIDER:-openai_compat}
+      OPENAI_CHAT_BASE_URL: ${OPENAI_CHAT_BASE_URL_HOST:-http://host.docker.internal:8100/v1}
+      OPENAI_EMBED_BASE_URL: ${OPENAI_EMBED_BASE_URL_HOST:-http://host.docker.internal:8101/v1}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL:-qwen3-30b-a3b}
+      OPENAI_EMBED_MODEL: ${OPENAI_EMBED_MODEL:-nomic-embed-text-v1.5}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      LLM_CACHE_PATH: /app/.cache/llm_cache.db
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./ml/artifacts:/app/ml/artifacts:ro
+      - apicache:/app/.cache
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 1g
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: aic-frontend
+    environment:
+      API_BASE_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+    mem_limit: 512m
+
 volumes:
   pgdata:
   neo4jdata:
   neo4jlogs:
   promdata:
   grafanadata:
+  apicache:

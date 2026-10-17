@@ -19,7 +19,7 @@ from typing import Any
 from core.logging import get_trace_id
 
 
-class ErrorCode(str, enum.Enum):
+class ErrorCode(enum.StrEnum):
     INPUT_INVALID = "INPUT_INVALID"          # bad/missing args from the planner
     SQL_REJECTED = "SQL_REJECTED"            # guardrail/validator blocked the query
     NO_RESULTS = "NO_RESULTS"                # ran fine but returned zero rows

@@ -17,9 +17,10 @@ import json
 import sqlite3
 import threading
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from core.config import settings
 from core.logging import get_logger
