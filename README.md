@@ -1,6 +1,18 @@
 # Enterprise Analytics Copilot
 
-AI-native analytics copilot that answers **"Why did sales drop in the West region last quarter, and what should we do?"** end-to-end — structured SQL KPIs, unstructured policy document retrieval (GraphRAG), demand forecasting, multi-agent LangGraph supervision, fail-closed guardrails, and full observability — with every step traceable and auditable.
+An AI-native analytics copilot that bridges structured data and unstructured enterprise policies. 
+
+Instead of hardcoded dashboards, users can ask any natural language question and the system will autonomously route the request to the correct tools to find the answer.
+
+### What it can do:
+*   **Structured Data (SQL):** *"Why did sales drop in the West region last quarter?"*
+*   **Unstructured Policy (GraphRAG):** *"What are the finance capitalization thresholds?"*
+*   **Predictive ML:** *"Forecast demand for the next quarter."*
+
+### How it works:
+* The backend uses a multi-agent **LangGraph** supervisor to orchestrate **SQL KPI computation**,
+* **Neo4j GraphRAG retrieval**, and **PyTorch forecasting**.
+* It is built for production with fail-closed **guardrails**, full **Prometheus/Grafana observability**, and a traceable audit log for every single step.
 
 ## Architecture
 
@@ -28,7 +40,12 @@ AI-native analytics copilot that answers **"Why did sales drop in the West regio
                                               └─────────────────┘
 ```
 
-Postgres holds structured sales/finance facts. Neo4j holds GraphRAG policy-chunk retrieval. FastAPI is the REST backend with JWT RBAC. Streamlit is the chat UI. LangGraph orchestrates the agent loop (planner → tool agents → critic → synthesis). vLLM on a remote RTX 4090 serves chat + embeddings via an SSH tunnel.
+* Postgres holds structured sales/finance facts.
+* Neo4j holds GraphRAG policy-chunk retrieval.
+* FastAPI is the REST backend with JWT RBAC.
+* Streamlit is the chat UI.
+* LangGraph orchestrates the agent loop (planner → tool agents → critic → synthesis).
+* vLLM on a remote RTX 4090 serves chat + embeddings via an SSH tunnel.
 
 ## Quickstart
 
@@ -123,18 +140,7 @@ Thresholds: hard-fail (guardrail block rate 100%, factual citation required) + s
 
 ## Limitations & Architectural Trade-offs
 
-- **8-case golden set** — pilot-scoped evaluation; production would expand to ~25+ hand-labeled questions
-- **Pilot scope** — optimized for the West-region sales-drop question; other regions/quarters use the same paths but may need threshold tuning
-- **LLM endpoint** — remote vLLM on RTX 4090 via SSH tunnel; local LM Studio fallback configured but not loaded
-- **Authentication** — JWT + RBAC demo roles only (analyst/admin), no enterprise SSO
-- **Free-tier LLM** — Gemini quota exhausted; remote GPU instance incurs hourly cost
-
-## JD Mapping (Apple)
-
-- **Full-stack AI/LLM application development** — FastAPI backend + Streamlit frontend + LangGraph agent loop + Docker compose orchestration
-- **RAG / retrieval systems** — Neo4j GraphRAG with hybrid vector + fulltext, domain-aware source filtering, retrieval-grounded answers with citations
-- **SQL / data engineering** — Postgres warehouse schema, seed jobs, batch KPI aggregation, deterministic number computation (no LLM-hallucinated figures)
-- **ML / forecasting** — LSTM weekly demand model with train/evaluate/serve pipeline and model card
-- **AI safety / guardrails** — fail-closed ingress/egress policy engine, prompt-injection detection, PII redaction, citation grounding, full audit log
-- **Observability / evals** — Prometheus + Grafana, LLM-as-judge golden set at temperature=0, hard-fail/soft-warn thresholds, per-request trace IDs
-- **CI / shipping** — ruff lint, pytest suite (10/10), Makefile targets, Docker images for API + frontend, GitHub Actions ready
+- **Evaluation Scale:** The current golden set includes 8 hand-labeled pilot cases. A production deployment would scale this to 50+ cases and integrate Ragas for automated retrieval scoring.
+- **LLM Serving:** The demo runs against a self-hosted Qwen3-30B-A3B (AWQ) instance via vLLM. In an enterprise setting, this would be replaced by a managed endpoint (e.g., AWS Bedrock) with automatic failover.
+- **Authentication:** JWT and RBAC are implemented for demo purposes (analyst/admin roles). Production would require integration with an enterprise IdP (e.g., Okta, Azure AD).
+- **Scope:** The data warehouse is seeded with a localized Retail/Finance dataset to demonstrate the multi-agent flow, rather than connecting to a live production data lake.
