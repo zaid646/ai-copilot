@@ -82,6 +82,12 @@ class Settings(BaseSettings):
     ingest_chunk_overlap: int = 120
     ingest_extract_entities: bool = False
 
+    # Guardrails
+    guardrail_fail_closed: bool = True          # on guardrail error, block rather than pass
+    guardrail_llm_judge: bool = True            # run LLM-judge injection check alongside rules
+    guardrail_citation_required: bool = True    # factual answers must cite retrieved chunks
+    guardrail_max_question: int = 4000
+
     @property
     def pg_dsn(self) -> str:
         return (

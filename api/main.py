@@ -158,15 +158,16 @@ async def ask(
     verdict = ingress_check(body.question, trace_id)
     if verdict["action"] == "blocked":
         raise HTTPException(status_code=400, detail=f"blocked by guardrail: {verdict['rule']}")
+    question = verdict.get("redacted_question", body.question)
 
     # Ensure a conversation exists so the turn is persisted.
     conversation_id = body.conversation_id
     if conversation_id is None:
-        conversation_id = _create_conversation(user.get("user_id"), body.question)
+        conversation_id = _create_conversation(user.get("user_id"), question)
 
     start = time.perf_counter()
     final = run_agent(
-        body.question,
+        question,
         user_id=user.get("user_id"),
         conversation_id=conversation_id,
         max_iterations=body.max_iterations,
@@ -175,8 +176,12 @@ async def ask(
     elapsed_ms = int((time.perf_counter() - start) * 1000)
 
     answer = final.get("answer", "") or ""
+    citations = final.get("citations", []) or []
+    domain = final.get("domain")
     # --- egress guardrail ---
-    egress = egress_check(answer, trace_id)
+    egress = egress_check(answer, trace_id, citations=citations, domain=domain)
+    if egress.get("action") == "blocked":
+        raise HTTPException(status_code=400, detail=f"blocked by guardrail: {egress['rule']}")
     if egress.get("action") == "redacted":
         answer = egress.get("redacted_answer", answer)
 
@@ -372,7 +377,7 @@ async def health() -> HealthResponse:
 
 
 @app.get("/metrics")
-async def metrics(_user: dict[str, Any] = Depends(require_role("admin"))):
+async def metrics():
     return metrics_response()
 
 
