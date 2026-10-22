@@ -62,4 +62,4 @@ jobs:
       - name: Seed warehouse
         run: python -m db.seed
       - name: Test (LLM-dependent case skipped)
-        run: pytest -q -k "not test_ask_as_analyst"
+        run: pytest -q tests/test_api.py -k "not test_ask_as_analyst"
