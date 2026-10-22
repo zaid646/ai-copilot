@@ -15,6 +15,8 @@
   backtest, 400 validation points).
 
 ## Metrics (validation, held-out weeks)
+**Original unseeded reference — superseded; see reproduction note below.**
+
 | Model | MAE | RMSE | MAPE |
 |---|---|---|---|
 | LSTM (ours) | 288.39 | 387.88 | 37.2% |
@@ -25,6 +27,14 @@ predictions). Note: the series are close to random walks with an injected
 structural break (West, Q3); a short 6-week holdout is dominated by that break's
 variance, so a 20-week holdout is used for a more stable estimate.
 
+## Reproduction note (local, seeded warehouse)
+The earlier 288.39 / 343.24 reference came from an **unseeded run** and is
+**superseded**. The seeded reproduction is **LSTM MAE 265.362 / RMSE 346.022 /
+MAPE 28.09%** and **baseline 345.586 / 437.222 / 33.508%**. The old values are
+retained above for history; the tree forecaster in `forecast/` is compared
+against the seeded LSTM on the exact same 400 windows.
+See `forecast/results/xgb_metrics.json`.
+
 ## Intended use
 - Copilot tool `forecast_demand(region, category, horizon_weeks)` to support
   "what happens next" reasoning alongside the deterministic KPI tool.
@@ -33,7 +43,7 @@ variance, so a 20-week holdout is used for a more stable estimate.
 ## Limitations
 - Only 20 coarse series; no product-level or customer-level forecasts.
 - Weekly granularity; 20-week holdout per series → still limited validation.
-- Series are near random walks, so gains over last-value are modest (~16% MAE).
+- Series are near random walks; the seeded reproduction shows a ~23% MAE gain over last-value (the superseded unseeded run showed ~16%).
 - Does not ingest exogenous regressors (promotions, price changes) yet.
 - Performance degrades on series with structural breaks (e.g., the injected
   West-region Q3 drop is not predictable from history alone).
