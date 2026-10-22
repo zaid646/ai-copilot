@@ -270,12 +270,14 @@ def main() -> int:
         },
         "reference_committed": {
             "source": "ml/model_card.md (pre-existing, not re-run here)",
+            "status": "superseded",
             "lstm": {"mae": 288.39, "rmse": 387.88, "mape": 37.2},
             "baseline": {"mae": 343.24, "rmse": 434.85, "mape": 36.4},
             "note": (
-                "Committed reference numbers differ from the locally reproduced "
-                "warehouse run; XGBoost/LightGBM are compared against the LSTM "
-                "reproduced on the exact same 400 windows."
+                "Superseded: the earlier 288.39/343.24 reference came from an "
+                "unseeded run. The seeded reproduction is LSTM 265.362 / baseline "
+                "345.586; all comparisons use that reproduced pair on the exact "
+                "same 400 windows."
             ),
         },
         "feature_count": len(built["feature_names"]),

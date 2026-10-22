@@ -38,18 +38,18 @@ weeks rather than copying the last value.
 | LSTM (reproduced locally) | 265.362 | 346.022 | 28.090% | -23.22% |
 | Last-value baseline (reproduced) | 345.586 | 437.222 | 33.508% | — |
 
+Superseded unseeded reference (not used for comparison): LSTM 288.39 / baseline 343.24.
+
 LightGBM is **0.07%** better than the reproduced LSTM on MAE (0.19 revenue
 units) and XGBoost is **1.04%** worse. Treat the LSTM and trees as practically
 tied on this small, near-random-walk dataset; the tree models are materially
 better than the last-value baseline.
 
-> **Reproducibility note.** The pre-existing `ml/model_card.md` reports LSTM
-> MAE 288.39 and baseline 343.24. Re-running `ml.train` + `ml.evaluate` against
-> the seeded Docker warehouse produces **265.362 / 345.586** instead. The
-> original figures are retained as a committed reference in
-> `results/xgb_metrics.json` (`reference_committed`), but all comparisons here
-> use the **locally reproduced** LSTM and baseline on the *same* 400 windows.
-> We do not claim to reproduce the model card exactly.
+> **Superseded reference.** The earlier LSTM MAE 288.39 / baseline 343.24 came
+> from an **unseeded run** and is superseded. The seeded reproduction is
+> **265.362 / 345.586**. The old values are retained in
+> `results/xgb_metrics.json` (`reference_committed.status = "superseded"`); all
+> comparisons here use the seeded LSTM and baseline on the *same* 400 windows.
 
 ## Reproduce
 
