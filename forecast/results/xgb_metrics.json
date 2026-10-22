@@ -1,0 +1,275 @@
+{
+  "task": "weekly demand one-step-ahead forecasting",
+  "n_series": 20,
+  "n_backtests": 400,
+  "split": {
+    "window": 8,
+    "validation_weeks_per_series": 20,
+    "validation_targets_per_series": 20,
+    "scheme": "chronological last-20-weeks per series, identical to ml.train"
+  },
+  "seed": 42,
+  "models": {
+    "xgboost": {
+      "name": "xgboost",
+      "mae": 268.132,
+      "rmse": 338.613,
+      "mape": 27.294,
+      "n": 400,
+      "improvement_vs_baseline_pct": 22.41,
+      "improvement_vs_lstm_pct": -1.04
+    },
+    "lightgbm": {
+      "name": "lightgbm",
+      "mae": 265.169,
+      "rmse": 334.783,
+      "mape": 27.211,
+      "n": 400,
+      "improvement_vs_baseline_pct": 23.27,
+      "improvement_vs_lstm_pct": 0.07
+    },
+    "baseline": {
+      "name": "last_value",
+      "mae": 345.586,
+      "rmse": 437.222,
+      "mape": 33.508,
+      "n": 400
+    },
+    "lstm": {
+      "name": "lstm",
+      "mae": 265.362,
+      "rmse": 346.022,
+      "mape": 28.09
+    },
+    "reproduced_lstm": {
+      "name": "lstm",
+      "mae": 265.362,
+      "rmse": 346.022,
+      "mape": 28.09
+    },
+    "reproduced_baseline": {
+      "name": "last_value",
+      "mae": 345.586,
+      "rmse": 437.222,
+      "mape": 33.508
+    }
+  },
+  "reference_committed": {
+    "source": "ml/model_card.md (pre-existing, not re-run here)",
+    "lstm": {
+      "mae": 288.39,
+      "rmse": 387.88,
+      "mape": 37.2
+    },
+    "baseline": {
+      "mae": 343.24,
+      "rmse": 434.85,
+      "mape": 36.4
+    },
+    "note": "Committed reference numbers differ from the locally reproduced warehouse run; XGBoost/LightGBM are compared against the LSTM reproduced on the exact same 400 windows."
+  },
+  "feature_count": 46,
+  "features": [
+    "lag_1",
+    "lag_2",
+    "lag_3",
+    "lag_4",
+    "lag_5",
+    "lag_6",
+    "lag_7",
+    "lag_8",
+    "roll_mean_4",
+    "roll_std_4",
+    "roll_min_4",
+    "roll_max_4",
+    "roll_mean_8",
+    "roll_std_8",
+    "roll_min_8",
+    "roll_max_8",
+    "roll_mean_12",
+    "roll_std_12",
+    "roll_min_12",
+    "roll_max_12",
+    "diff_1",
+    "pct_1",
+    "momentum_4",
+    "week_sin_1",
+    "week_cos_1",
+    "week_sin_2",
+    "week_cos_2",
+    "month_sin",
+    "month_cos",
+    "week_of_year",
+    "month",
+    "quarter",
+    "day_of_year",
+    "quarter_1",
+    "quarter_2",
+    "quarter_3",
+    "quarter_4",
+    "region_CENTRAL",
+    "region_EAST",
+    "region_SOUTH",
+    "region_WEST",
+    "category_Beverages",
+    "category_Dairy",
+    "category_Household",
+    "category_Produce",
+    "category_Snacks"
+  ],
+  "versions": {
+    "python": "3.12.14",
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "xgboost": "3.4.1",
+    "lightgbm": "4.7.0",
+    "joblib": "1.6.0"
+  },
+  "lstm_source": {
+    "lstm": {
+      "name": "lstm",
+      "mae": 265.362,
+      "rmse": 346.022,
+      "mape": 28.09
+    },
+    "baseline": {
+      "name": "last_value",
+      "mae": 345.586,
+      "rmse": 437.222,
+      "mape": 33.508
+    },
+    "source": "ml/artifacts/eval_report.json",
+    "note": "Reproduced locally by ml.train/ml.evaluate on the seeded warehouse."
+  },
+  "top_features": [
+    {
+      "feature": "roll_mean_12",
+      "importance": 0.19665
+    },
+    {
+      "feature": "day_of_year",
+      "importance": 0.036404
+    },
+    {
+      "feature": "roll_min_8",
+      "importance": 0.035132
+    },
+    {
+      "feature": "roll_mean_8",
+      "importance": 0.034867
+    },
+    {
+      "feature": "roll_mean_4",
+      "importance": 0.032105
+    },
+    {
+      "feature": "quarter",
+      "importance": 0.031185
+    },
+    {
+      "feature": "lag_7",
+      "importance": 0.030045
+    },
+    {
+      "feature": "lag_5",
+      "importance": 0.029763
+    },
+    {
+      "feature": "lag_8",
+      "importance": 0.02901
+    },
+    {
+      "feature": "week_of_year",
+      "importance": 0.028062
+    },
+    {
+      "feature": "lag_4",
+      "importance": 0.027961
+    },
+    {
+      "feature": "roll_std_12",
+      "importance": 0.027716
+    },
+    {
+      "feature": "category_Produce",
+      "importance": 0.027195
+    },
+    {
+      "feature": "lag_6",
+      "importance": 0.025985
+    },
+    {
+      "feature": "diff_1",
+      "importance": 0.025754
+    },
+    {
+      "feature": "roll_std_4",
+      "importance": 0.025158
+    },
+    {
+      "feature": "category_Dairy",
+      "importance": 0.024024
+    },
+    {
+      "feature": "momentum_4",
+      "importance": 0.023845
+    },
+    {
+      "feature": "lag_3",
+      "importance": 0.023304
+    },
+    {
+      "feature": "lag_2",
+      "importance": 0.022449
+    }
+  ],
+  "feature_importance_all": {
+    "roll_mean_12": 0.19665,
+    "day_of_year": 0.036404,
+    "roll_min_8": 0.035132,
+    "roll_mean_8": 0.034867,
+    "roll_mean_4": 0.032105,
+    "quarter": 0.031185,
+    "lag_7": 0.030045,
+    "lag_5": 0.029763,
+    "lag_8": 0.02901,
+    "week_of_year": 0.028062,
+    "lag_4": 0.027961,
+    "roll_std_12": 0.027716,
+    "category_Produce": 0.027195,
+    "lag_6": 0.025985,
+    "diff_1": 0.025754,
+    "roll_std_4": 0.025158,
+    "category_Dairy": 0.024024,
+    "momentum_4": 0.023845,
+    "lag_3": 0.023304,
+    "lag_2": 0.022449,
+    "lag_1": 0.021181,
+    "roll_min_4": 0.021177,
+    "roll_std_8": 0.018994,
+    "week_sin_2": 0.017459,
+    "roll_max_12": 0.017169,
+    "roll_min_12": 0.016997,
+    "pct_1": 0.016381,
+    "week_cos_1": 0.014862,
+    "week_sin_1": 0.01317,
+    "week_cos_2": 0.012974,
+    "roll_max_4": 0.012722,
+    "month": 0.01238,
+    "roll_max_8": 0.01109,
+    "category_Household": 0.009125,
+    "category_Snacks": 0.006542,
+    "month_cos": 0.006468,
+    "region_EAST": 0.005741,
+    "region_SOUTH": 0.005029,
+    "region_CENTRAL": 0.004841,
+    "quarter_3": 0.004363,
+    "region_WEST": 0.004183,
+    "month_sin": 0.00405,
+    "category_Beverages": 0.003629,
+    "quarter_2": 0.00277,
+    "quarter_1": 8.9e-05,
+    "quarter_4": 0.0
+  }
+}

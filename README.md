@@ -85,7 +85,8 @@ make api    # uvicorn on :8000
 | **Multi-agent LangGraph supervisor** | Planner → SQL agent → GraphRAG agent → model agent → action agent → critic, with hard iteration cap and `END` routing |
 | **GraphRAG retrieval** | Neo4j hybrid (vector + fulltext), domain-aware source filter (retail vs finance manual), retrieval grounding verified by deterministic critic |
 | **Deterministic KPIs** | SQL-only number computation (`fact_sales`, `dim_date`) — West Q2 87,800.15 → Q3 72,724.78 (−17.17%) |
-| **Forecast model** | LSTM weekly model, MAE 288.39 vs baseline 343.24 (+16.0%) |
+| **Forecast model** | LSTM weekly model (committed ref MAE 288.39 vs baseline 343.24); locally reproduced MAE 265.36 vs 345.59 |
+| **Tree forecaster** | XGBoost / LightGBM on the same 400 backtests: MAE 268.13 / 265.17 vs reproduced LSTM 265.36 and baseline 345.59 (`forecast/`) |
 | **Guardrails (fail-closed)** | Prompt-injection, off-domain, PII redaction, SQL-write block, citation grounding, toxicity, secret redaction — every decision logged to `guardrail_events` |
 | **Observability** | Prometheus metrics (`guardrail_blocks_total`, `agent_runs_total`, `copilot_requests_total`), Grafana datasources, trace-per-request via `X-Trace-Id` |
 | **Memory** | Conversation and trace memory (`agents/memory.py`), persisted across requests |
