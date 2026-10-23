@@ -1,7 +1,7 @@
 """End-to-end simulated caller eval over a real localhost WebSocket.
 
-Pipeline (all real, CPU-only): Silero VAD -> faster-whisper base.en int8 ASR ->
-deterministic support agent + SQLite ticketing -> Piper TTS -> WebSocket PCM.
+Pipeline (all real, CPU-only): Silero VAD -> faster-whisper int8 ASR ->
+LLM-planned support agent + SQLite ticketing -> Piper TTS -> WebSocket PCM.
 
 The caller's lines are produced by a local LLM (scripted goals from YAML are the
 fallback when the LLM omits a required entity). Recordings, ASR round-trips,
@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import random
 import re
 import statistics
@@ -33,7 +34,7 @@ import yaml
 from core.config import settings as app_settings
 from evals.trajectory import score_trajectory
 from integrations.ticketing import TicketingSystem
-from voice.agent_bridge import SupportBackend
+from voice.agent_bridge import LLMSupportBackend
 from voice.asr import FasterWhisperASR, resample_linear
 from voice.config import VoiceSettings
 from voice.server import create_app
@@ -147,6 +148,7 @@ class Caller:
                 prompt,
                 temperature=0.0,
                 think=False,
+                model=self.model,
             ).strip().strip('"')
         except Exception:
             return script["text"], "fallback_error"
@@ -171,8 +173,13 @@ class Caller:
 # ---------------------------------------------------------------------------
 # server
 # ---------------------------------------------------------------------------
-def start_server(ticketing: TicketingSystem, asr: FasterWhisperASR, tts: PiperTTS) -> tuple[Any, threading.Thread]:
-    backend = SupportBackend(ticketing)
+def start_server(
+    ticketing: TicketingSystem,
+    asr: FasterWhisperASR,
+    tts: PiperTTS,
+    agent_model: str | None = None,
+) -> tuple[Any, threading.Thread]:
+    backend = LLMSupportBackend(ticketing, model=agent_model)
 
     def factory(s: VoiceSettings, tenant_id: str) -> dict[str, Any]:
         return {
@@ -304,7 +311,7 @@ async def run_scenario(scn: dict[str, Any], caller: Caller, ticketing: Ticketing
             pcm, rate = tts.synthesize_pcm(text)
             pcm16 = to_16k(pcm, rate)
             if barge_at is not None and idx == barge_at + 1:
-                await wait_for(lambda: state.first_audio.is_set(), 30)
+                await wait_for(lambda: state.first_audio.is_set(), 120)
             await send_pcm(ws, pcm16)
             await send_silence(ws)
             if barge_at is not None and idx == barge_at:
@@ -500,17 +507,43 @@ def judge_hallucination(
 
 
 # ---------------------------------------------------------------------------
+def setup_agent_model() -> str:
+    from agents.llm_support import DEFAULT_MODEL
+
+    return DEFAULT_MODEL
+
+
+def warm_agent(model: str) -> None:
+    from core.llm import chat_json
+
+    try:
+        chat_json(
+            "Return JSON.",
+            'Return {"ok": true}',
+            temperature=0.0,
+            think=False,
+            model=model,
+            use_cache=False,
+        )
+    except Exception:
+        pass
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--caller", choices=["llm", "scripted"], default="llm")
     parser.add_argument("--judge", choices=["llm", "rule"], default="llm")
     parser.add_argument("--only", default=None, help="run one scenario id")
+    parser.add_argument("--out", default=str(OUT), help="result JSON path")
     args = parser.parse_args()
 
     scenarios = yaml.safe_load(SCENARIOS.read_text())["scenarios"]
     if args.only:
         scenarios = [s for s in scenarios if s["id"] == args.only]
 
+    # Stream TTS in real time so the barge-in scenario exercises a genuine
+    # interruption instead of a burst that finishes before the caller speaks.
+    os.environ.setdefault("VOICE_PACING", "1")
     settings = VoiceSettings.from_env()
     random.seed(settings.seed)
     np.random.seed(settings.seed)
@@ -534,8 +567,10 @@ def main() -> None:
     asr.transcribe_pcm(b"\x00\x00" * SAMPLE_RATE, sample_rate=SAMPLE_RATE)
     tts.synthesize_pcm("Warm up.")
 
-    server, thread = start_server(ticketing, asr, tts)
-    caller = Caller(args.caller, "ornith-1.5-9b")
+    agent_model = setup_agent_model()
+    warm_agent(agent_model)
+    server, thread = start_server(ticketing, asr, tts, agent_model)
+    caller = Caller(args.caller, agent_model)
     results = []
     try:
         for scn in scenarios:
@@ -606,6 +641,8 @@ def main() -> None:
             "asr": f"faster-whisper {settings.asr_model} {settings.asr_compute_type}",
             "tts": f"piper {settings.tts_voice}",
             "vad": "silero v5 (onnx, CPU)",
+            "agent_backend": "llm",
+            "agent_model": f"{agent_model} via LM Studio",
             "caller_model": "ornith-1.5-9b via LM Studio" if args.caller == "llm" else "scripted",
             "judge": (
                 "llm (gemma-4-12b-agentic via LM Studio)"
@@ -613,6 +650,7 @@ def main() -> None:
                 else "rule"
             ),
             "transport": f"websockets localhost:{PORT}",
+            "pacing": settings.pacing,
             "seed": {
                 "voice": settings.seed,
                 "llm": app_settings.llm_seed,
@@ -635,8 +673,9 @@ def main() -> None:
         "summary": summary,
         "scenarios": results,
     }
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(payload, indent=2) + "\n")
+    out_path = Path(args.out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(payload, indent=2) + "\n")
     print(json.dumps(summary, indent=2))
 
 

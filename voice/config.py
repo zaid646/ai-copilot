@@ -41,7 +41,7 @@ class VoiceSettings:
     tts_default_language: str = "en"
     model_dir: Path = MODEL_DIR
     budget_ms: int = 1000
-    agent_backend: str = "support"
+    agent_backend: str = "llm"
     max_turn_seconds: float = 30.0
     partials_enabled: bool = True
     pacing: bool = False
@@ -68,7 +68,7 @@ class VoiceSettings:
             tts_default_language=os.getenv("VOICE_TTS_DEFAULT_LANGUAGE", "en"),
             model_dir=Path(os.getenv("VOICE_MODEL_DIR", str(MODEL_DIR))),
             budget_ms=int(os.getenv("VOICE_BUDGET_MS", "1000")),
-            agent_backend=os.getenv("VOICE_AGENT_BACKEND", "support"),
+            agent_backend=os.getenv("VOICE_AGENT_BACKEND", "llm"),
             max_turn_seconds=float(os.getenv("VOICE_MAX_TURN_SECONDS", "30")),
             partials_enabled=_bool("VOICE_PARTIALS", True),
             pacing=_bool("VOICE_PACING", False),

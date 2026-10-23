@@ -1,8 +1,10 @@
 """Bridge from the voice session to an agent backend.
 
-``support`` (default for voice) uses the deterministic support agent plus the
-SQLite ticketing mock. ``analytics`` calls the existing LangGraph supervisor
-with ``voice_mode=True``; it requires the normal Postgres/Neo4j/LLM stack.
+``llm`` (default for voice) runs the LLM-planned support agent with the SQLite
+ticketing mock. ``analytics`` calls the existing LangGraph supervisor with
+``voice_mode=True``; it requires the normal Postgres/Neo4j/LLM stack. The
+``support`` backend is the deterministic regex agent, kept only as an offline
+unit-test mock and explicit fallback.
 """
 from __future__ import annotations
 
@@ -10,6 +12,7 @@ import threading
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from agents.llm_support import LLMSupportAgent
 from agents.voice_support import SupportAgent
 from integrations.ticketing import TicketingSystem
 
@@ -27,6 +30,8 @@ class AgentBackend(Protocol):
 
 
 class SupportBackend:
+    """Deterministic regex support agent; offline test/fallback backend only."""
+
     def __init__(self, ticketing: TicketingSystem | None = None) -> None:
         self.agent = SupportAgent(ticketing)
 
@@ -36,6 +41,31 @@ class SupportBackend:
             text=reply.text,
             tool_calls=reply.tool_calls,
             backend="support",
+            refused=reply.refused,
+        )
+
+
+class LLMSupportBackend:
+    """Real LLM-planned support agent with deterministic confirmation guards."""
+
+    def __init__(
+        self,
+        ticketing: TicketingSystem | None = None,
+        *,
+        model: str | None = None,
+        seed: int = 42,
+        use_cache: bool = False,
+    ) -> None:
+        self.agent = LLMSupportAgent(
+            ticketing, model=model, seed=seed, use_cache=use_cache
+        )
+
+    def respond(self, text: str, *, tenant_id: str, session_id: str) -> AgentResponse:
+        reply = self.agent.handle_text(text, tenant_id, session_id)
+        return AgentResponse(
+            text=reply.text,
+            tool_calls=reply.tool_calls,
+            backend="llm",
             refused=reply.refused,
         )
 
@@ -66,4 +96,8 @@ class AnalyticsBackend:
 def build_backend(name: str) -> AgentBackend:
     if name == "analytics":
         return AnalyticsBackend()
-    return SupportBackend()
+    if name in {"llm", "support_llm"}:
+        return LLMSupportBackend()
+    if name in {"support", "regex"}:
+        return SupportBackend()
+    raise ValueError(f"unknown voice agent backend: {name}")
