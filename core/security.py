@@ -24,12 +24,14 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def create_access_token(username: str, role: str, user_id: int | None = None,
-                        expires_minutes: int | None = None) -> str:
+                        expires_minutes: int | None = None,
+                        tenant_id: str = "default") -> str:
     now = datetime.now(UTC)
     exp = now + timedelta(minutes=expires_minutes or settings.jwt_expire_minutes)
     payload: dict[str, Any] = {
         "sub": username,
         "role": role,
+        "tenant_id": str(tenant_id),
         "iat": int(now.timestamp()),
         "exp": int(exp.timestamp()),
     }

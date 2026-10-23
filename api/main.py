@@ -30,6 +30,9 @@ from api.models import (
     AskRequest,
     AskResponse,
     CategoryRow,
+    HandoffRequest,
+    HandoffResponse,
+    HandoffResumeRequest,
     HealthResponse,
     KpiCard,
     LoginRequest,
@@ -42,6 +45,7 @@ from core.config import settings
 from core.db import close_pool, get_pool, query, query_one
 from core.logging import configure_logging, get_logger, get_trace_id, set_trace_id
 from guardrails.checks import egress_check, ingress_check
+from integrations.ticketing import HandoffService
 from observability.metrics import (
     AGENT_LOOP_ITERATIONS,
     AGENT_RUNS,
@@ -52,6 +56,7 @@ from observability.metrics import (
 
 configure_logging()
 log = get_logger("api.main")
+_handoffs = HandoffService()
 
 
 @asynccontextmanager
@@ -99,11 +104,14 @@ async def unhandled_exception_handler(_req: Request, exc: Exception) -> JSONResp
     return _envelope(500, "TOOL_ERROR", "internal server error")
 
 
-def _create_conversation(user_id: int | None, title: str) -> int | None:
+def _create_conversation(
+    user_id: int | None, title: str, tenant_id: str = "default"
+) -> int | None:
     try:
         row = query_one(
-            "INSERT INTO conversations (user_id, title) VALUES (%s, %s) RETURNING conversation_id",
-            (user_id, (title or "")[:120]),
+            "INSERT INTO conversations (user_id, title, tenant_id) "
+            "VALUES (%s, %s, %s) RETURNING conversation_id",
+            (user_id, (title or "")[:120], tenant_id),
         )
         return row["conversation_id"] if row else None
     except Exception as exc:  # pragma: no cover - persistence best effort
@@ -162,8 +170,9 @@ async def ask(
 
     # Ensure a conversation exists so the turn is persisted.
     conversation_id = body.conversation_id
+    tenant_id = user.get("tenant_id") or "default"
     if conversation_id is None:
-        conversation_id = _create_conversation(user.get("user_id"), question)
+        conversation_id = _create_conversation(user.get("user_id"), question, tenant_id)
 
     start = time.perf_counter()
     final = run_agent(
@@ -172,6 +181,7 @@ async def ask(
         conversation_id=conversation_id,
         max_iterations=body.max_iterations,
         trace_id=trace_id,
+        tenant_id=tenant_id,
     )
     elapsed_ms = int((time.perf_counter() - start) * 1000)
 
@@ -233,18 +243,20 @@ async def history(
     limit: int = 50,
 ) -> list[MessageOut]:
     limit = max(1, min(limit, 200))
+    tenant_id = user.get("tenant_id") or "default"
     if user.get("role") == "admin":
         rows = query(
             "SELECT m.conversation_id, m.role, m.content, m.trace_id, m.created_at "
-            "FROM messages m ORDER BY m.message_id DESC LIMIT %s",
-            (limit,),
+            "FROM messages m WHERE m.tenant_id=%s ORDER BY m.message_id DESC LIMIT %s",
+            (tenant_id, limit),
         )
     else:
         rows = query(
             "SELECT m.conversation_id, m.role, m.content, m.trace_id, m.created_at "
             "FROM messages m JOIN conversations c ON c.conversation_id = m.conversation_id "
-            "WHERE c.user_id = %s ORDER BY m.message_id DESC LIMIT %s",
-            (user.get("user_id"), limit),
+            "WHERE c.user_id = %s AND m.tenant_id=%s "
+            "ORDER BY m.message_id DESC LIMIT %s",
+            (user.get("user_id"), tenant_id, limit),
         )
     return [
         MessageOut(
@@ -266,7 +278,11 @@ async def get_trace(
     trace_id: str,
     user: dict[str, Any] = Depends(require_role("analyst", "admin")),
 ) -> TraceResponse:
-    trace = query_one("SELECT * FROM agent_traces WHERE trace_id=%s", (trace_id,))
+    tenant_id = user.get("tenant_id") or "default"
+    trace = query_one(
+        "SELECT * FROM agent_traces WHERE trace_id=%s AND tenant_id=%s",
+        (trace_id, tenant_id),
+    )
     if trace is None:
         raise HTTPException(status_code=404, detail="trace not found")
     if user.get("role") != "admin" and trace.get("user_id") not in (None, user.get("user_id")):
@@ -389,6 +405,32 @@ async def health() -> HealthResponse:
         neo_ok = False
     status = "ok" if (pg_ok and neo_ok) else "degraded"
     return HealthResponse(status=status, postgres=pg_ok, neo4j=neo_ok)
+
+
+# --------------------------------------------------------------------------
+# Warm human handoff
+# --------------------------------------------------------------------------
+@app.post("/handoff", response_model=HandoffResponse)
+async def handoff(
+    body: HandoffRequest,
+    user: dict[str, Any] = Depends(require_role("analyst", "admin")),
+) -> HandoffResponse:
+    tenant_id = user.get("tenant_id") or "default"
+    result = _handoffs.pause(
+        tenant_id,
+        body.conversation_id,
+        body.state,
+        reason=body.reason,
+    )
+    return HandoffResponse(**result)
+
+
+@app.post("/handoff/resume")
+async def handoff_resume(
+    body: HandoffResumeRequest,
+    _user: dict[str, Any] = Depends(require_role("analyst", "admin")),
+) -> dict[str, Any]:
+    return _handoffs.resume(body.handoff_token)
 
 
 @app.get("/metrics")

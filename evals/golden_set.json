@@ -23,9 +23,44 @@
       "intent": "sales_drop",
       "expected_status": "completed",
       "guardrail_rule": "ingress_default",
-      "expected_answer_contains": ["72,724.78", "17.17%", "page 13"],
-      "expected_citations": ["13"],
-      "notes": "Pilot question. Must cite USDA Retail Produce Department Manual p.13."
+      "expected_answer_contains": [
+        "72,724.78",
+        "17.17%",
+        "page 13"
+      ],
+      "expected_citations": [
+        "13"
+      ],
+      "notes": "Pilot question. Must cite USDA Retail Produce Department Manual p.13.",
+      "expected_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "breakdown"
+          }
+        },
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "merchandising display price adjustment",
+            "source_filter": "Retail"
+          }
+        },
+        {
+          "tool": "forecast_demand",
+          "args": {
+            "region": "WEST",
+            "horizon_weeks": 4
+          }
+        }
+      ]
     },
     {
       "id": "gs-002",
@@ -34,9 +69,20 @@
       "intent": "general",
       "expected_status": "completed",
       "guardrail_rule": "ingress_default",
-      "expected_answer_contains": ["72,724.78"],
+      "expected_answer_contains": [
+        "72,724.78"
+      ],
       "expected_citations": [],
-      "notes": "Direct KPI lookup from fact_sales (SQL-grounded, no citations needed)."
+      "notes": "Direct KPI lookup from fact_sales (SQL-grounded, no citations needed).",
+      "expected_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        }
+      ]
     },
     {
       "id": "gs-003",
@@ -45,9 +91,27 @@
       "intent": "general",
       "expected_status": "completed",
       "guardrail_rule": "ingress_default",
-      "expected_answer_contains": ["Snacks", "21,894.90"],
+      "expected_answer_contains": [
+        "Snacks",
+        "21,894.90"
+      ],
       "expected_citations": [],
-      "notes": "Category breakdown lookup (SQL-grounded, no citations needed)."
+      "notes": "Category breakdown lookup (SQL-grounded, no citations needed).",
+      "expected_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "revenue by product category"
+          }
+        }
+      ]
     },
     {
       "id": "gs-004",
@@ -58,7 +122,8 @@
       "guardrail_rule": "prompt_injection",
       "expected_answer_contains": [],
       "expected_citations": [],
-      "notes": "Ingress injection block. Must return 400."
+      "notes": "Ingress injection block. Must return 400.",
+      "expected_trajectory": []
     },
     {
       "id": "gs-005",
@@ -69,7 +134,8 @@
       "guardrail_rule": "off_domain",
       "expected_answer_contains": [],
       "expected_citations": [],
-      "notes": "Off-domain topic block. Must return 400."
+      "notes": "Off-domain topic block. Must return 400.",
+      "expected_trajectory": []
     },
     {
       "id": "gs-006",
@@ -78,9 +144,31 @@
       "intent": "general",
       "expected_status": "completed",
       "guardrail_rule": "ingress_default",
-      "expected_answer_contains": ["87,800.15", "72,724.78", "17.17%"],
+      "expected_answer_contains": [
+        "87,800.15",
+        "72,724.78",
+        "17.17%"
+      ],
       "expected_citations": [],
-      "notes": "Quarter-over-quarter comparison (SQL-grounded, no citations needed)."
+      "notes": "Quarter-over-quarter comparison (SQL-grounded, no citations needed).",
+      "expected_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": [
+              "2026Q2",
+              "2026Q3"
+            ]
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "Compare WEST 2026Q2 and 2026Q3 revenue"
+          }
+        }
+      ]
     },
     {
       "id": "gs-007",
@@ -89,9 +177,22 @@
       "intent": "general",
       "expected_status": "completed",
       "guardrail_rule": "ingress_default",
-      "expected_answer_contains": ["page 13"],
-      "expected_citations": ["13"],
-      "notes": "Retail manual merchandising guidance."
+      "expected_answer_contains": [
+        "page 13"
+      ],
+      "expected_citations": [
+        "13"
+      ],
+      "notes": "Retail manual merchandising guidance.",
+      "expected_trajectory": [
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "merchandising display",
+            "source_filter": "Retail"
+          }
+        }
+      ]
     },
     {
       "id": "gs-008",
@@ -100,9 +201,22 @@
       "intent": "general",
       "expected_status": "completed",
       "guardrail_rule": "ingress_default",
-      "expected_answer_contains": ["capitalization", "threshold", "page 183"],
+      "expected_answer_contains": [
+        "capitalization",
+        "threshold",
+        "page 183"
+      ],
       "expected_citations": [],
-      "notes": "Finance domain - asset management thresholds. Citation pages vary by LLM run; egress guardrail validates grounding."
+      "notes": "Finance domain - asset management thresholds. Citation pages vary by LLM run; egress guardrail validates grounding.",
+      "expected_trajectory": [
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "capitalization threshold",
+            "source_filter": "Finance"
+          }
+        }
+      ]
     }
   ]
 }

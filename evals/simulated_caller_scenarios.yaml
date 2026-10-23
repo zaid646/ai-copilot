@@ -1,0 +1,156 @@
+# Scripted caller goals for the CPU voice eval. An LLM paraphrases each turn
+# (entities such as B123 / T-123456 are validated and the script is the fallback).
+scenarios:
+  - id: booking
+    title: Booking with confirmation
+    tenant: tenant-a
+    goal: Book a service appointment for Friday at 2 pm and confirm it.
+    expected_tools:
+      - {tool: create_ticket, args: {category: booking}}
+      - {tool: classify_ticket, args: {category: booking}}
+      - {tool: route_ticket, args: {queue: scheduling}}
+      - {tool: notify_customer, args: {channel: sms}}
+    success_phrases: ["booked"]
+    requires_confirmation: true
+    turns:
+      - text: "Hi, I'd like to book an appointment for Friday at 2 pm."
+        must_keep: ["friday"]
+      - text: "Yes, please confirm it."
+        must_keep: []
+
+  - id: status
+    title: Ticket status lookup
+    tenant: tenant-a
+    seed_ticket: {ticket_id: "T-123456", subject: "Printer not working", status: open}
+    goal: Ask for the status of ticket T-123456.
+    expected_tools:
+      - {tool: lookup_ticket, args: {ticket_id: "T-123456"}}
+    success_phrases: ["open"]
+    turns:
+      - text: "What is the status of ticket T-123456?"
+        must_keep: ["T-123456"]
+
+  - id: complaint
+    title: Complaint registration
+    tenant: tenant-a
+    goal: Register a complaint about order B123 and confirm.
+    expected_tools:
+      - {tool: create_ticket, args: {category: complaint}}
+      - {tool: classify_ticket, args: {category: complaint}}
+      - {tool: route_ticket, args: {queue: support}}
+      - {tool: notify_customer, args: {channel: sms}}
+    success_phrases: ["complaint registered"]
+    requires_confirmation: true
+    turns:
+      - text: "I want to register a complaint about order B123."
+        must_keep: ["B123"]
+      - text: "Yes, go ahead."
+        must_keep: []
+
+  - id: refund
+    title: Refund with confirmation
+    tenant: tenant-a
+    goal: Request a $30 refund for order B123 and confirm.
+    expected_tools:
+      - {tool: create_ticket, args: {category: refund}}
+      - {tool: classify_ticket, args: {category: billing}}
+      - {tool: route_ticket, args: {queue: billing}}
+      - {tool: notify_customer, args: {channel: sms}}
+    success_phrases: ["refund request"]
+    requires_confirmation: true
+    turns:
+      - text: "I need a refund for order B123 for thirty dollars."
+        must_keep: ["B123", "30"]
+      - text: "Yes, confirm the refund."
+        must_keep: []
+
+  - id: out_of_scope
+    title: Out-of-scope refusal
+    tenant: tenant-a
+    goal: Ask about the weather in Tokyo, which is out of scope.
+    expected_tools: []
+    success_phrases: ["can't help"]
+    expect_refusal: true
+    turns:
+      - text: "What's the weather in Tokyo?"
+        must_keep: ["tokyo"]
+
+  - id: barge_in
+    title: Barge-in during status response
+    tenant: tenant-a
+    seed_ticket: {ticket_id: "T-123456", subject: "Printer not working", status: open}
+    goal: Ask for ticket status, then interrupt the answer to request a $30 refund for order B123 and confirm.
+    expected_tools:
+      - {tool: lookup_ticket, args: {ticket_id: "T-123456"}}
+      - {tool: create_ticket, args: {category: refund}}
+      - {tool: classify_ticket, args: {category: billing}}
+      - {tool: route_ticket, args: {queue: billing}}
+      - {tool: notify_customer, args: {channel: sms}}
+    success_phrases: ["refund request"]
+    barge_in_after_turn: 0
+    requires_confirmation: true
+    turns:
+      - text: "What is the status of ticket T-123456?"
+        must_keep: ["T-123456"]
+      - text: "Actually, I need a refund for order B102 for thirty dollars."
+        must_keep: ["B102", "30"]
+      - text: "Yes, confirm it."
+        must_keep: []
+
+  - id: mishear_correct
+    title: Misheard order number corrected
+    tenant: tenant-a
+    goal: Request a refund for B123, correct it to B124, then confirm.
+    expected_tools:
+      - {tool: create_ticket, args: {category: refund, subject: "B124"}}
+      - {tool: classify_ticket, args: {category: billing}}
+      - {tool: route_ticket, args: {queue: billing}}
+      - {tool: notify_customer, args: {channel: sms}}
+    success_phrases: ["refund request"]
+    requires_confirmation: true
+    turns:
+      - text: "I need a refund for order B123 for thirty dollars."
+        must_keep: ["B123", "30"]
+      - text: "No, I said B124."
+        must_keep: ["B124"]
+      - text: "Yes, confirm the refund."
+        must_keep: []
+
+  - id: code_switch
+    title: Spanish/English code-switching
+    tenant: tenant-a
+    goal: In a mix of Spanish and English, request a $30 refund for order B123 and confirm.
+    expected_tools:
+      - {tool: create_ticket, args: {category: refund}}
+      - {tool: classify_ticket, args: {category: billing}}
+      - {tool: route_ticket, args: {queue: billing}}
+      - {tool: notify_customer, args: {channel: sms}}
+    success_phrases: ["refund request"]
+    requires_confirmation: true
+    expect_code_switch: true
+    turns:
+      - text: "Hola, I need a refund for order B123 for 30 dollars, gracias."
+        must_keep: ["B123", "30", "gracias"]
+      - text: "Sí, confirm."
+        must_keep: []
+
+  - id: multi_turn
+    title: Multi-turn status then complaint
+    tenant: tenant-a
+    seed_ticket: {ticket_id: "T-123456", subject: "Printer not working", status: open}
+    goal: Check ticket T-123456, then file a complaint about order B123 and confirm.
+    expected_tools:
+      - {tool: lookup_ticket, args: {ticket_id: "T-123456"}}
+      - {tool: create_ticket, args: {category: complaint}}
+      - {tool: classify_ticket, args: {category: complaint}}
+      - {tool: route_ticket, args: {queue: support}}
+      - {tool: notify_customer, args: {channel: sms}}
+    success_phrases: ["complaint registered"]
+    requires_confirmation: true
+    turns:
+      - text: "What is the status of ticket T-123456?"
+        must_keep: ["T-123456"]
+      - text: "I also want to file a complaint about order B123."
+        must_keep: ["B123"]
+      - text: "Yes, go ahead."
+        must_keep: []

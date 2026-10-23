@@ -125,29 +125,35 @@ CREATE TABLE IF NOT EXISTS users (
     username      TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role          TEXT NOT NULL CHECK (role IN ('analyst','admin')),
+    tenant_id     TEXT NOT NULL DEFAULT 'default',
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS conversations (
     conversation_id BIGSERIAL PRIMARY KEY,
     user_id         BIGINT NOT NULL REFERENCES users(user_id),
+    tenant_id       TEXT NOT NULL DEFAULT 'default',
     title           TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE INDEX IF NOT EXISTS idx_conversations_tenant ON conversations(tenant_id);
 
 CREATE TABLE IF NOT EXISTS messages (
     message_id      BIGSERIAL PRIMARY KEY,
     conversation_id BIGINT NOT NULL REFERENCES conversations(conversation_id),
+    tenant_id       TEXT NOT NULL DEFAULT 'default',
     role            TEXT NOT NULL CHECK (role IN ('user','assistant','system')),
     content         TEXT NOT NULL,
     trace_id        TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_messages_conv ON messages(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_messages_tenant ON messages(tenant_id);
 
 CREATE TABLE IF NOT EXISTS agent_traces (
     trace_id      TEXT PRIMARY KEY,
     user_id       BIGINT REFERENCES users(user_id),
+    tenant_id     TEXT NOT NULL DEFAULT 'default',
     question      TEXT NOT NULL,
     answer        TEXT,
     status        TEXT NOT NULL DEFAULT 'running',  -- running | completed | failed | blocked
@@ -175,6 +181,7 @@ CREATE INDEX IF NOT EXISTS idx_agent_steps_trace ON agent_steps(trace_id);
 CREATE TABLE IF NOT EXISTS guardrail_events (
     event_id      BIGSERIAL PRIMARY KEY,
     trace_id      TEXT,
+    tenant_id     TEXT NOT NULL DEFAULT 'default',
     direction     TEXT NOT NULL CHECK (direction IN ('ingress','egress')),
     rule          TEXT NOT NULL,
     action        TEXT NOT NULL CHECK (action IN ('passed','redacted','blocked')),
@@ -182,6 +189,8 @@ CREATE TABLE IF NOT EXISTS guardrail_events (
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS idx_guardrail_trace ON guardrail_events(trace_id);
+CREATE INDEX IF NOT EXISTS idx_guardrail_tenant ON guardrail_events(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_agent_traces_tenant ON agent_traces(tenant_id);
 
 CREATE TABLE IF NOT EXISTS model_metrics (
     metric_id     BIGSERIAL PRIMARY KEY,

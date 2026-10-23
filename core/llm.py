@@ -133,7 +133,7 @@ def _extract_text(data: dict[str, Any]) -> tuple[str, dict[str, int]]:
     reraise=True,
 )
 def _chat_lmstudio(
-    system: str, user: str, temperature: float, think: bool
+    system: str, user: str, temperature: float, think: bool, seed: int
 ) -> tuple[str, dict[str, int]]:
     """OpenAI-compatible /v1/chat/completions served by LM Studio (local).
 
@@ -156,6 +156,7 @@ def _chat_lmstudio(
                 ],
                 "temperature": temperature,
                 "max_tokens": settings.lmstudio_chat_max_tokens,
+                "seed": seed,
             },
             timeout=600.0,
         )
@@ -187,7 +188,7 @@ def _chat_lmstudio(
     reraise=True,
 )
 def _chat_openai_compat(
-    system: str, user: str, temperature: float, think: bool, json_mode: bool
+    system: str, user: str, temperature: float, think: bool, json_mode: bool, seed: int
 ) -> tuple[str, dict[str, int]]:
     """OpenAI-compatible /v1/chat/completions (e.g. vLLM on a Vast.ai GPU).
 
@@ -204,6 +205,7 @@ def _chat_openai_compat(
         ],
         "temperature": temperature,
         "max_tokens": settings.openai_chat_max_tokens,
+        "seed": seed,
         "chat_template_kwargs": {"enable_thinking": think},
     }
     if json_mode:
@@ -246,6 +248,7 @@ def chat_full(
     namespace: str = "chat",
     think: bool | None = None,
     json_mode: bool = False,
+    seed: int | None = None,
 ) -> dict[str, Any]:
     """Return {'text', 'usage'} for a single-turn completion (disk-cached).
 
@@ -263,11 +266,12 @@ def chat_full(
     else:
         use_think = think
     model = _active_chat_model()
+    use_seed = settings.llm_seed if seed is None else seed
     key = cache.key_for(
         model,
         temp,
         system,
-        f"{user}\x00think={int(use_think)}\x00json={int(json_mode)}",
+        f"{user}\x00think={int(use_think)}\x00json={int(json_mode)}\x00seed={use_seed}",
         namespace,
     )
 
@@ -277,9 +281,9 @@ def chat_full(
         return hit
 
     if settings.chat_provider == "lmstudio":
-        text, usage = _chat_lmstudio(system, user, temp, use_think)
+        text, usage = _chat_lmstudio(system, user, temp, use_think, use_seed)
     elif settings.chat_provider == "openai_compat":
-        text, usage = _chat_openai_compat(system, user, temp, use_think, json_mode)
+        text, usage = _chat_openai_compat(system, user, temp, use_think, json_mode, use_seed)
     else:
         payload = {
             "systemInstruction": {"parts": [{"text": system}]},
@@ -287,6 +291,7 @@ def chat_full(
             "generationConfig": {
                 "temperature": temp,
                 "maxOutputTokens": settings.llm_max_output_tokens,
+                "seed": use_seed,
                 "thinkingConfig": {"thinkingBudget": 0},
             },
         }
@@ -304,12 +309,24 @@ def chat(
     temperature: float | None = None,
     namespace: str = "chat",
     think: bool | None = None,
+    seed: int | None = None,
 ) -> str:
-    return chat_full(system, user, temperature=temperature, namespace=namespace, think=think)["text"]
+    return chat_full(
+        system,
+        user,
+        temperature=temperature,
+        namespace=namespace,
+        think=think,
+        seed=seed,
+    )["text"]
 
 
 def chat_json(
-    system: str, user: str, temperature: float | None = None, think: bool | None = None
+    system: str,
+    user: str,
+    temperature: float | None = None,
+    think: bool | None = None,
+    seed: int | None = None,
 ) -> dict[str, Any]:
     text = chat_full(
         system,
@@ -318,6 +335,7 @@ def chat_json(
         namespace="json",
         think=think,
         json_mode=True,
+        seed=seed,
     )["text"]
     return _extract_json(text)
 

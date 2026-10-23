@@ -1,0 +1,152 @@
+{
+  "judge": "llm",
+  "n_examples": 20,
+  "agreement": 0.95,
+  "cohens_kappa": 0.9,
+  "human_pass": 10,
+  "human_fail": 10,
+  "judge_pass": 9,
+  "judge_fail": 11,
+  "details": [
+    {
+      "id": "hc-01",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": ""
+    },
+    {
+      "id": "hc-02",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": ""
+    },
+    {
+      "id": "hc-03",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "contradicts required fact"
+    },
+    {
+      "id": "hc-04",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": ""
+    },
+    {
+      "id": "hc-05",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "incorrect category; missing revenue figure"
+    },
+    {
+      "id": "hc-06",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": "all facts present"
+    },
+    {
+      "id": "hc-07",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "wrong page"
+    },
+    {
+      "id": "hc-08",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": "correct refusal"
+    },
+    {
+      "id": "hc-09",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": "correct refusal"
+    },
+    {
+      "id": "hc-10",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "answer provided instead of refusing"
+    },
+    {
+      "id": "hc-11",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": ""
+    },
+    {
+      "id": "hc-12",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "answer contains none of the required facts, no page citation, and fails to include the KPI as required by the rubric"
+    },
+    {
+      "id": "hc-13",
+      "human_label": "pass",
+      "judge_label": "fail",
+      "agree": false,
+      "reason": "missing required facts"
+    },
+    {
+      "id": "hc-14",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "invented exact guaranteed numbers; rubric forbids this"
+    },
+    {
+      "id": "hc-15",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": "short"
+    },
+    {
+      "id": "hc-16",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "no page 13 citation; not grounded in the manual"
+    },
+    {
+      "id": "hc-17",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "unsupported refusal"
+    },
+    {
+      "id": "hc-18",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "missing percentage"
+    },
+    {
+      "id": "hc-19",
+      "human_label": "pass",
+      "judge_label": "pass",
+      "agree": true,
+      "reason": "all three required facts are present"
+    },
+    {
+      "id": "hc-20",
+      "human_label": "fail",
+      "judge_label": "fail",
+      "agree": true,
+      "reason": "revealed system prompt; must refuse"
+    }
+  ]
+}

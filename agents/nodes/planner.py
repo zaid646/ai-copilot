@@ -6,6 +6,7 @@ from typing import Any
 from agents.domain import classify_domain, classify_intent
 from agents.nodes.base import llm_json
 from agents.tracelib import traced
+from voice.speech_style import inject as inject_voice_style
 
 
 @traced("planner")
@@ -23,6 +24,7 @@ def planner_node(state: dict[str, Any]) -> dict[str, Any]:
             "history": history,
             "domain": domain,
             "intent": intent,
+            "voice_directive": inject_voice_style("") if state.get("voice_mode") else "",
         },
     )
     steps = data.get("steps", []) if isinstance(data, dict) else []

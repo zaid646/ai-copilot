@@ -1,0 +1,13 @@
+# CPU-only CI for the voice pipeline: no ASR/TTS models are downloaded.
+fastapi==0.143.3
+uvicorn==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.16.0
+PyJWT==2.15.1
+bcrypt==5.0.0
+structlog==26.1.0
+prometheus-client==0.26.0
+numpy==2.4.2
+pytest==9.0.2
+pytest-asyncio==1.4.0
+PyYAML==6.0.3

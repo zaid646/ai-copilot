@@ -32,16 +32,18 @@ _CANDIDATES = 30
 
 _VECTOR_CYPHER = """
 CALL db.index.vector.queryNodes($index, $k, $vec) YIELD node, score
+WHERE coalesce(node.tenant_id, 'default') = $tenant_id
 OPTIONAL MATCH (d:Document)-[:HAS_CHUNK]->(node)
 RETURN node.id AS id, node.text AS text, node.page AS page,
-       d.title AS document, score
+       d.title AS document, coalesce(node.tenant_id, 'default') AS tenant_id, score
 """
 
 _FULLTEXT_CYPHER = """
 CALL db.index.fulltext.queryNodes($index, $q) YIELD node, score
+WHERE coalesce(node.tenant_id, 'default') = $tenant_id
 OPTIONAL MATCH (d:Document)-[:HAS_CHUNK]->(node)
 RETURN node.id AS id, node.text AS text, node.page AS page,
-       d.title AS document, score
+       d.title AS document, coalesce(node.tenant_id, 'default') AS tenant_id, score
 """
 
 _LUCENE_SPECIAL = re.compile(r'[^0-9a-zA-Z ]+')
@@ -81,7 +83,10 @@ def _rrf(rank_lists: list[list[dict[str, Any]]], k: int = RRF_K) -> list[dict[st
 
 
 def graphrag_search(
-    query: str, top_k: int = 5, source_filter: str | None = None
+    query: str,
+    top_k: int = 5,
+    source_filter: str | None = None,
+    tenant_id: str = "default",
 ) -> dict[str, Any]:
     start = time.perf_counter()
     try:
@@ -101,14 +106,21 @@ def graphrag_search(
         try:
             with driver.session() as session:
                 vector_hits = session.run(
-                    _VECTOR_CYPHER, index=VECTOR_INDEX, k=_CANDIDATES, vec=vec
+                    _VECTOR_CYPHER,
+                    index=VECTOR_INDEX,
+                    k=_CANDIDATES,
+                    vec=vec,
+                    tenant_id=tenant_id,
                 ).data()
                 fulltext_hits: list[dict[str, Any]] = []
                 lq = _lucene_query(q)
                 if lq:
                     try:
                         fulltext_hits = session.run(
-                            _FULLTEXT_CYPHER, index=FULLTEXT_INDEX, q=lq
+                            _FULLTEXT_CYPHER,
+                            index=FULLTEXT_INDEX,
+                            q=lq,
+                            tenant_id=tenant_id,
                         ).data()
                     except neo4j.exceptions.Neo4jError:
                         fulltext_hits = []
@@ -151,6 +163,7 @@ def graphrag_search(
     TOOL_CALLS.labels(tool="graphrag_search", status="success").inc()
     return ok({
         "query": q,
+        "tenant_id": tenant_id,
         "source_filter": source_filter,
         "count": len(results),
         "strategy": "hybrid_rrf",
