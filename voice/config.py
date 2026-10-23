@@ -46,6 +46,9 @@ class VoiceSettings:
     partials_enabled: bool = True
     pacing: bool = False
     asr_initial_prompt: str | None = None
+    voice_llm_provider: str | None = None
+    voice_llm_base_url: str | None = None
+    voice_llm_model: str | None = None
 
     @classmethod
     def from_env(cls) -> VoiceSettings:
@@ -73,6 +76,9 @@ class VoiceSettings:
             partials_enabled=_bool("VOICE_PARTIALS", True),
             pacing=_bool("VOICE_PACING", False),
             asr_initial_prompt=os.getenv("VOICE_ASR_PROMPT") or None,
+            voice_llm_provider=os.getenv("VOICE_LLM_PROVIDER") or None,
+            voice_llm_base_url=os.getenv("VOICE_LLM_BASE_URL") or None,
+            voice_llm_model=os.getenv("VOICE_LLM_MODEL") or None,
         )
 
     @property

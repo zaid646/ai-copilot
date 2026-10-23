@@ -113,12 +113,29 @@ failures are ASR phrase recognition on final responses ("complaint registered",
 remains the headline; `tiny.en` is reported as the accuracy/latency ablation,
 not as the default.
 
-## LLM latency caveat
+## LLM latency caveat and serving comparison
 
 The local LM Studio instance runs on CPU/Metal without GPU offload, so LLM hop
 p95 is noisy (up to ~55 s for tiny and ~24 s for base). These runs reflect a
 single local eval on the configured caller/judge models; production latency
 will depend on the LLM endpoint and model.
+
+### CPU vs GPU serving (availability at eval time)
+
+| serving | endpoint | model | status | notes |
+| --- | --- | --- | --- | --- |
+| LM Studio CPU | `http://localhost:1234/v1` | `ornith-1.5-9b` | **unavailable now** | `Connection refused` on port 1234 at eval time; numbers below are the last good CPU run. |
+| vLLM GPU | `http://localhost:8100/v1` (SSH tunnel `8100→remote 8000`) | `qwen3-30b-a3b` GPTQ-Int4 | **unavailable** | Tunnel not running; runbook uses placeholders (`<SSH_PORT>`, `<INSTANCE_HOST>`, `<VLLM_API_KEY>`) with no credentials available. |
+| Colab GPU | `colab ssh -s t4-adopted` / `-s tfx` | — | **CPU-only** | Both sessions are CPU-only (`torch.cuda.is_available()=False`, no NVIDIA driver, no vLLM, no Qwen3-30B). |
+
+Because no LLM endpoint was reachable, a fresh GPU (or CPU) LLM-in-loop run could **not** be produced. The table below reports the last good CPU/LM Studio run honestly; the `<1 s` budget did **not** hold because the LLM planning hop (~17–19 s p50) dominates e2e (~95%+ of latency).
+
+| size | task success | e2e p50/p95 ms | LLM p50/p95 ms | ASR p50/p95 ms | under budget |
+| --- | --- | --- | --- | --- | --- |
+| `base.en` (headline) | 8/9 | 18,589 / 24,442 | 17,762 / 23,241 | 842 / 1,003 | 0 / 18 |
+| `tiny.en` (ablation) | 6/9 | 19,834 / 55,413 | 19,139 / 54,693 | 393 / 482 | 0 / 18 |
+
+`tiny.en` does not win budget or task success; its ASR advantage (~449 ms p50) is swamped by the LLM hop. `base.en` remains the headline. Remaining bottleneck: **LLM planning latency**, not ASR/TTS/network.
 
 Record run logs: `evals/voice_results/simulated_caller.json` and
 `simulated_caller_tiny.json`.

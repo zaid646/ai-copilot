@@ -15,6 +15,7 @@ from typing import Any, Protocol
 from agents.llm_support import LLMSupportAgent
 from agents.voice_support import SupportAgent
 from integrations.ticketing import TicketingSystem
+from voice.config import VoiceSettings
 
 
 @dataclass
@@ -55,9 +56,16 @@ class LLMSupportBackend:
         model: str | None = None,
         seed: int = 42,
         use_cache: bool = False,
+        settings: VoiceSettings | None = None,
     ) -> None:
+        settings = settings or VoiceSettings.from_env()
         self.agent = LLMSupportAgent(
-            ticketing, model=model, seed=seed, use_cache=use_cache
+            ticketing,
+            model=model or settings.voice_llm_model,
+            seed=seed,
+            use_cache=use_cache,
+            provider=settings.voice_llm_provider,
+            base_url=settings.voice_llm_base_url,
         )
 
     def respond(self, text: str, *, tenant_id: str, session_id: str) -> AgentResponse:

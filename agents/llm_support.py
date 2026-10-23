@@ -17,6 +17,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
+from core.config import settings
 from core.llm import chat_json
 from core.logging import get_logger
 from integrations.ticketing import TicketingSystem
@@ -114,11 +115,15 @@ class LLMSupportAgent:
         model: str | None = None,
         seed: int = 42,
         use_cache: bool = False,
+        provider: str | None = None,
+        base_url: str | None = None,
     ) -> None:
         self.ticketing = ticketing or TicketingSystem()
         self.model = model or DEFAULT_MODEL
         self.seed = seed
         self.use_cache = use_cache
+        self.provider = provider
+        self.base_url = base_url
         self._lock = threading.RLock()
         self.sessions: dict[str, SupportSession] = {}
 
@@ -157,26 +162,42 @@ class LLMSupportAgent:
             f"CALLER: {text}"
         )
         last_error: Exception | None = None
-        for attempt in range(2):
-            try:
-                return chat_json(
-                    _SYSTEM,
-                    prompt,
-                    temperature=0.0 if attempt == 0 else 0.1,
-                    think=False,
-                    seed=self.seed + attempt,
-                    model=self.model,
-                    schema=_PLAN_SCHEMA if attempt == 0 else None,
-                    max_tokens=400,
-                    use_cache=self.use_cache,
-                )
-            except Exception as exc:
-                last_error = exc
-                log.warning(
-                    "llm support plan attempt failed",
-                    attempt=attempt + 1,
-                    error=str(exc),
-                )
+        # Primary provider (configured, e.g. vLLM GPU), then LM Studio fallback.
+        candidates: list[tuple[str, str | None, str]] = []
+        if self.provider:
+            candidates.append((self.provider, self.base_url, self.model))
+        else:
+            candidates.append(("lmstudio", settings.lmstudio_base_url, self.model or settings.lmstudio_chat_model))
+        candidates.append(("lmstudio", settings.lmstudio_base_url, settings.lmstudio_chat_model))
+        seen: set[tuple[str, str | None, str]] = set()
+        for prov, burl, m in candidates:
+            if (prov, burl, m) in seen:
+                continue
+            seen.add((prov, burl, m))
+            for attempt in range(2):
+                try:
+                    return chat_json(
+                        _SYSTEM,
+                        prompt,
+                        temperature=0.0 if attempt == 0 else 0.1,
+                        think=False,
+                        seed=self.seed + attempt,
+                        model=m,
+                        schema=_PLAN_SCHEMA if attempt == 0 else None,
+                        max_tokens=400,
+                        use_cache=self.use_cache,
+                        provider=prov,
+                        base_url=burl,
+                    )
+                except Exception as exc:
+                    last_error = exc
+                    log.warning(
+                        "llm support plan attempt failed",
+                        provider=prov,
+                        base_url=burl,
+                        attempt=attempt + 1,
+                        error=str(exc),
+                    )
         log.warning("llm support plan failed", error=str(last_error))
         return {
             "action": "other",
