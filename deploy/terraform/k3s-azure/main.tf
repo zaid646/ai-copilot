@@ -74,9 +74,7 @@ variable "neo4j_enabled" {
 # ---------------------------------------------------------------------------
 
 locals {
-  resource_group_name = var.resource_group_name != null
-    ? var.resource_group_name
-    : "rg-ai-copilot-${var.environment}"
+  resource_group_name = var.resource_group_name != null ? var.resource_group_name : "rg-ai-copilot-${var.environment}"
   common_tags = {
     environment = var.environment
     managed-by  = "terraform"
@@ -101,21 +99,6 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = var.location
   administrator_login = "aiocopilot"
-  version             = "16"
-  sku_name            = "Standard_B1ms"
-
-  storage {
-    storage_size_gb = 32
-  }
-
-  backup {
-    backup_retention_days = 7
-    geo_redundant_backup  = false
-  }
-
-  high_availability {
-    mode = "Disabled"
-  }
 
   tags = local.common_tags
 }
@@ -125,16 +108,11 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
 # ---------------------------------------------------------------------------
 
 output "resource_group_name" {
-  value       = azurerm_resource_group.rg.name
+  value       = local.resource_group_name
   description = "Name of the resource group"
 }
 
-output "postgres_fqdn" {
-  value       = var.postgres_enabled ? azurerm_postgresql_flexible_server.postgres[0].fully_qualified_domain_name : null
-  description = "Fully qualified domain name of the PostgreSQL server (if enabled)"
-}
-
-output "postgres_connection_string" {
-  value       = var.postgres_enabled ? azurerm_postgresql_flexible_server.postgres[0].connection_string : null
-  description = "Connection string for the PostgreSQL server (if enabled)"
+output "postgres_enabled" {
+  value       = var.postgres_enabled
+  description = "Whether PostgreSQL is enabled"
 }
