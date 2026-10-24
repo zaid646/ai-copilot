@@ -94,6 +94,22 @@ class CategoryRow(BaseModel):
     units: int | None = None
 
 
+class HandoffRequest(BaseModel):
+    conversation_id: str = Field(min_length=1, max_length=128)
+    reason: str = Field(default="caller_requested_human", max_length=200)
+    state: dict[str, Any] = Field(default_factory=dict)
+
+
+class HandoffResponse(BaseModel):
+    handoff_id: str
+    handoff_token: str
+    status: str
+
+
+class HandoffResumeRequest(BaseModel):
+    handoff_token: str = Field(min_length=1)
+
+
 class HealthResponse(BaseModel):
     status: str
     postgres: bool

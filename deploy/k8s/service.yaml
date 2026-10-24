@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-copilot-api
+  labels:
+    app: ai-copilot
+    component: api
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-copilot
+    component: api
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8000

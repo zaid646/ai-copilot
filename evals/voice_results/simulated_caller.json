@@ -1,0 +1,2176 @@
+{
+  "run": {
+    "timestamp": "2026-10-23T14:51:58Z",
+    "host": "local macOS Apple Silicon CPU (no GPU)",
+    "asr": "faster-whisper base.en int8",
+    "tts": "piper en_US-lessac-medium",
+    "vad": "silero v5 (onnx, CPU)",
+    "agent_backend": "llm",
+    "agent_model": "ornith-1.5-9b via LM Studio",
+    "caller_model": "ornith-1.5-9b via LM Studio",
+    "judge": "llm (gemma-4-12b-agentic via LM Studio)",
+    "transport": "websockets localhost:8765",
+    "pacing": true,
+    "seed": {
+      "voice": 42,
+      "llm": 42,
+      "asr_decoding": {
+        "beam_size": 1,
+        "temperature": 0.0,
+        "seed_supported": false,
+        "note": "faster-whisper transcribe() has no seed argument; process RNG is seeded and temperature=0.0 disables sampling"
+      },
+      "llm_note": "seed is sent to LM Studio / OpenAI-compatible / Gemini; LM Studio accepts it but does not echo it, so effectiveness is not independently verifiable"
+    }
+  },
+  "summary": {
+    "n_scenarios": 9,
+    "task_success": 8,
+    "task_success_rate": 0.8889,
+    "tool_choice_accuracy": 1.0,
+    "argument_validity": 1.0,
+    "order_correctness": 1.0,
+    "hallucination_pass_rate": 1.0,
+    "e2e_p50_ms": 18589.33,
+    "e2e_p95_ms": 24442.06,
+    "asr_p50_ms": 842.02,
+    "asr_p95_ms": 1003.12,
+    "llm_p50_ms": 17761.74,
+    "llm_p95_ms": 23241.13,
+    "tts_p50_ms": 257.02,
+    "tts_p95_ms": 320.13,
+    "network_p50_ms": 21.38,
+    "network_p95_ms": 22.21,
+    "per_hop": {
+      "asr_ms": {
+        "p50_ms": 842.02,
+        "p95_ms": 1003.12,
+        "n": 19
+      },
+      "llm_ms": {
+        "p50_ms": 17761.74,
+        "p95_ms": 23241.13,
+        "n": 19
+      },
+      "tts_ms": {
+        "p50_ms": 257.02,
+        "p95_ms": 320.13,
+        "n": 19
+      },
+      "network_ms": {
+        "p50_ms": 21.38,
+        "p95_ms": 22.21,
+        "n": 19
+      },
+      "e2e_ms": {
+        "p50_ms": 18589.33,
+        "p95_ms": 24442.06,
+        "n": 19
+      }
+    },
+    "e2e_under_budget": 0,
+    "e2e_turns": 19,
+    "caller_wer_mean": 0.0783,
+    "barge_in_ok": true
+  },
+  "scenarios": [
+    {
+      "id": "booking",
+      "title": "Booking with confirmation",
+      "goal": "Book a service appointment for Friday at 2 pm and confirm it.",
+      "caller_turns": [
+        {
+          "text": "Hi, I'd like to book an appointment for Friday at 2 pm.",
+          "source": "fallback_error"
+        },
+        {
+          "text": "Yes, please confirm it.",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "Hi, I'd like to book an appointment for Friday at 2pm.",
+        "Yes, please confirm it."
+      ],
+      "caller_wer": 0.0833,
+      "agent_turns": [
+        {
+          "text": "Just to confirm: a booking for Friday at 2pm. Should I go ahead?",
+          "backend": "llm",
+          "tool_calls": []
+        },
+        {
+          "text": "Booked. Your confirmation is T-2FAD2832EC; it's with scheduling.",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "create_ticket",
+              "args": {
+                "subject": "Booking request for Friday at 2pm",
+                "category": "booking",
+                "priority": "normal"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-2FAD2832EC"
+              }
+            },
+            {
+              "tool": "classify_ticket",
+              "args": {
+                "ticket_id": "T-2FAD2832EC",
+                "category": "booking"
+              },
+              "seq": 1
+            },
+            {
+              "tool": "route_ticket",
+              "args": {
+                "ticket_id": "T-2FAD2832EC",
+                "queue": "scheduling"
+              },
+              "seq": 2
+            },
+            {
+              "tool": "notify_customer",
+              "args": {
+                "ticket_id": "T-2FAD2832EC",
+                "channel": "sms"
+              },
+              "seq": 3
+            }
+          ]
+        }
+      ],
+      "response_asr": "Booked, your confirmation is TE2FAD2832EC. It's with scheduling.",
+      "response_asr_wer": 0.2222,
+      "tool_calls": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "subject": "Booking request for Friday at 2pm",
+            "category": "booking",
+            "priority": "normal"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-2FAD2832EC"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "ticket_id": "T-2FAD2832EC",
+            "category": "booking"
+          },
+          "seq": 1
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "ticket_id": "T-2FAD2832EC",
+            "queue": "scheduling"
+          },
+          "seq": 2
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "ticket_id": "T-2FAD2832EC",
+            "channel": "sms"
+          },
+          "seq": 3
+        }
+      ],
+      "expected_tools": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "category": "booking"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "category": "booking"
+          }
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "queue": "scheduling"
+          }
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "channel": "sms"
+          }
+        }
+      ],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": [
+          {
+            "step": 0,
+            "expected_tool": "create_ticket",
+            "actual_tool": "create_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 1,
+            "expected_tool": "classify_ticket",
+            "actual_tool": "classify_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 2,
+            "expected_tool": "route_ticket",
+            "actual_tool": "route_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 3,
+            "expected_tool": "notify_customer",
+            "actual_tool": "notify_customer",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          }
+        ]
+      },
+      "task_success": true,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": true,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": false,
+        "events": 0,
+        "frames_after_barge_in": null
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          36899.03,
+          14425.98
+        ],
+        "hops": [
+          {
+            "asr_ms": 1001.1,
+            "llm_ms": 35773.1,
+            "tts_ms": 103.9,
+            "network_ms": 20.94,
+            "e2e_ms": 36899.03
+          },
+          {
+            "asr_ms": 729.86,
+            "llm_ms": 13650.22,
+            "tts_ms": 25.14,
+            "network_ms": 20.76,
+            "e2e_ms": 14425.98
+          }
+        ],
+        "p50_ms": 25662.5,
+        "p95_ms": 35775.38,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 865.48,
+            "p95_ms": 987.54,
+            "n": 2
+          },
+          "llm_ms": {
+            "p50_ms": 24711.66,
+            "p95_ms": 34666.96,
+            "n": 2
+          },
+          "tts_ms": {
+            "p50_ms": 64.52,
+            "p95_ms": 99.96,
+            "n": 2
+          },
+          "network_ms": {
+            "p50_ms": 20.85,
+            "p95_ms": 20.93,
+            "n": 2
+          },
+          "e2e_ms": {
+            "p50_ms": 25662.5,
+            "p95_ms": 35775.38,
+            "n": 2
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 2
+      },
+      "wall_seconds": 81.4
+    },
+    {
+      "id": "status",
+      "title": "Ticket status lookup",
+      "goal": "Ask for the status of ticket T-123456.",
+      "caller_turns": [
+        {
+          "text": "What is the status of ticket T-123456?",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "What is the status of Ticket T-123456?"
+      ],
+      "caller_wer": 0.0,
+      "agent_turns": [
+        {
+          "text": "Ticket T-123456 is open and is with the general queue. Anything else?",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "lookup_ticket",
+              "args": {
+                "ticket_id": "T-123456"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-123456",
+                "status": "open",
+                "queue": "the general queue"
+              }
+            }
+          ]
+        }
+      ],
+      "response_asr": "Ticket T-123456 is open and is with the general queue, anything else?",
+      "response_asr_wer": 0.0,
+      "tool_calls": [
+        {
+          "tool": "lookup_ticket",
+          "args": {
+            "ticket_id": "T-123456"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-123456",
+            "status": "open",
+            "queue": "the general queue"
+          }
+        }
+      ],
+      "expected_tools": [
+        {
+          "tool": "lookup_ticket",
+          "args": {
+            "ticket_id": "T-123456"
+          }
+        }
+      ],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": [
+          {
+            "step": 0,
+            "expected_tool": "lookup_ticket",
+            "actual_tool": "lookup_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          }
+        ]
+      },
+      "task_success": true,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": true,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": false,
+        "events": 0,
+        "frames_after_barge_in": null
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "short",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          20901.0
+        ],
+        "hops": [
+          {
+            "asr_ms": 861.53,
+            "llm_ms": 19706.69,
+            "tts_ms": 311.61,
+            "network_ms": 21.16,
+            "e2e_ms": 20901.0
+          }
+        ],
+        "p50_ms": 20901.0,
+        "p95_ms": 20901.0,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 861.53,
+            "p95_ms": 861.53,
+            "n": 1
+          },
+          "llm_ms": {
+            "p50_ms": 19706.69,
+            "p95_ms": 19706.69,
+            "n": 1
+          },
+          "tts_ms": {
+            "p50_ms": 311.61,
+            "p95_ms": 311.61,
+            "n": 1
+          },
+          "network_ms": {
+            "p50_ms": 21.16,
+            "p95_ms": 21.16,
+            "n": 1
+          },
+          "e2e_ms": {
+            "p50_ms": 20901.0,
+            "p95_ms": 20901.0,
+            "n": 1
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 1
+      },
+      "wall_seconds": 50.5
+    },
+    {
+      "id": "complaint",
+      "title": "Complaint registration",
+      "goal": "Register a complaint about order B123 and confirm.",
+      "caller_turns": [
+        {
+          "text": "I want to register a complaint about order B123.",
+          "source": "fallback_error"
+        },
+        {
+          "text": "Yes, go ahead.",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "I want to register a complaint about Order B123.",
+        "Yes, go ahead."
+      ],
+      "caller_wer": 0.0,
+      "agent_turns": [
+        {
+          "text": "Just to confirm: a complaint about order B123. Should I go ahead?",
+          "backend": "llm",
+          "tool_calls": []
+        },
+        {
+          "text": "Complaint registered as T-702F17E8A1 and routed to support. We'll text you updates.",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "create_ticket",
+              "args": {
+                "subject": "Complaint about order B123",
+                "category": "complaint",
+                "priority": "high"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-702F17E8A1"
+              }
+            },
+            {
+              "tool": "classify_ticket",
+              "args": {
+                "ticket_id": "T-702F17E8A1",
+                "category": "complaint"
+              },
+              "seq": 1
+            },
+            {
+              "tool": "route_ticket",
+              "args": {
+                "ticket_id": "T-702F17E8A1",
+                "queue": "support"
+              },
+              "seq": 2
+            },
+            {
+              "tool": "notify_customer",
+              "args": {
+                "ticket_id": "T-702F17E8A1",
+                "channel": "sms"
+              },
+              "seq": 3
+            }
+          ]
+        }
+      ],
+      "response_asr": "Complaint registered is T-702F17E-8A1 and routed to support, will text you updates.",
+      "response_asr_wer": 0.3077,
+      "tool_calls": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "subject": "Complaint about order B123",
+            "category": "complaint",
+            "priority": "high"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-702F17E8A1"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "ticket_id": "T-702F17E8A1",
+            "category": "complaint"
+          },
+          "seq": 1
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "ticket_id": "T-702F17E8A1",
+            "queue": "support"
+          },
+          "seq": 2
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "ticket_id": "T-702F17E8A1",
+            "channel": "sms"
+          },
+          "seq": 3
+        }
+      ],
+      "expected_tools": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "category": "complaint"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "category": "complaint"
+          }
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "queue": "support"
+          }
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "channel": "sms"
+          }
+        }
+      ],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": [
+          {
+            "step": 0,
+            "expected_tool": "create_ticket",
+            "actual_tool": "create_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 1,
+            "expected_tool": "classify_ticket",
+            "actual_tool": "classify_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 2,
+            "expected_tool": "route_ticket",
+            "actual_tool": "route_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 3,
+            "expected_tool": "notify_customer",
+            "actual_tool": "notify_customer",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          }
+        ]
+      },
+      "task_success": true,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": true,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": false,
+        "events": 0,
+        "frames_after_barge_in": null
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          22049.0,
+          18366.1
+        ],
+        "hops": [
+          {
+            "asr_ms": 869.63,
+            "llm_ms": 20927.58,
+            "tts_ms": 231.31,
+            "network_ms": 20.48,
+            "e2e_ms": 22049.0
+          },
+          {
+            "asr_ms": 415.38,
+            "llm_ms": 17761.74,
+            "tts_ms": 167.6,
+            "network_ms": 21.39,
+            "e2e_ms": 18366.1
+          }
+        ],
+        "p50_ms": 20207.55,
+        "p95_ms": 21864.85,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 642.5,
+            "p95_ms": 846.92,
+            "n": 2
+          },
+          "llm_ms": {
+            "p50_ms": 19344.66,
+            "p95_ms": 20769.29,
+            "n": 2
+          },
+          "tts_ms": {
+            "p50_ms": 199.45,
+            "p95_ms": 228.12,
+            "n": 2
+          },
+          "network_ms": {
+            "p50_ms": 20.94,
+            "p95_ms": 21.34,
+            "n": 2
+          },
+          "e2e_ms": {
+            "p50_ms": 20207.55,
+            "p95_ms": 21864.85,
+            "n": 2
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 2
+      },
+      "wall_seconds": 71.6
+    },
+    {
+      "id": "refund",
+      "title": "Refund with confirmation",
+      "goal": "Request a $30 refund for order B123 and confirm.",
+      "caller_turns": [
+        {
+          "text": "I need a refund for order B123 for thirty dollars.",
+          "source": "fallback_error"
+        },
+        {
+          "text": "Yes, confirm the refund.",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "I need a refund for Order B123 for $30.",
+        "Yes, confirm the refund."
+      ],
+      "caller_wer": 0.1,
+      "agent_turns": [
+        {
+          "text": "Just to confirm: a $30.00 refund for order B123. Should I go ahead?",
+          "backend": "llm",
+          "tool_calls": []
+        },
+        {
+          "text": "Refund request logged as T-CC74D52C50. It's routed to billing and you'll get a text when it's reviewed.",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "create_ticket",
+              "args": {
+                "subject": "Refund for order B123 ($30.00)",
+                "category": "refund",
+                "priority": "normal"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-CC74D52C50"
+              }
+            },
+            {
+              "tool": "classify_ticket",
+              "args": {
+                "ticket_id": "T-CC74D52C50",
+                "category": "billing"
+              },
+              "seq": 1
+            },
+            {
+              "tool": "route_ticket",
+              "args": {
+                "ticket_id": "T-CC74D52C50",
+                "queue": "billing"
+              },
+              "seq": 2
+            },
+            {
+              "tool": "notify_customer",
+              "args": {
+                "ticket_id": "T-CC74D52C50",
+                "channel": "sms"
+              },
+              "seq": 3
+            }
+          ]
+        }
+      ],
+      "response_asr": "Refund requests logged as TCC74D52C50, it's routed to billing and you'll get a text when it's reviewed.",
+      "response_asr_wer": 0.1667,
+      "tool_calls": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "subject": "Refund for order B123 ($30.00)",
+            "category": "refund",
+            "priority": "normal"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-CC74D52C50"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "ticket_id": "T-CC74D52C50",
+            "category": "billing"
+          },
+          "seq": 1
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "ticket_id": "T-CC74D52C50",
+            "queue": "billing"
+          },
+          "seq": 2
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "ticket_id": "T-CC74D52C50",
+            "channel": "sms"
+          },
+          "seq": 3
+        }
+      ],
+      "expected_tools": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "category": "refund"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "category": "billing"
+          }
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "queue": "billing"
+          }
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "channel": "sms"
+          }
+        }
+      ],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": [
+          {
+            "step": 0,
+            "expected_tool": "create_ticket",
+            "actual_tool": "create_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 1,
+            "expected_tool": "classify_ticket",
+            "actual_tool": "classify_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 2,
+            "expected_tool": "route_ticket",
+            "actual_tool": "route_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 3,
+            "expected_tool": "notify_customer",
+            "actual_tool": "notify_customer",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          }
+        ]
+      },
+      "task_success": true,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": true,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": false,
+        "events": 0,
+        "frames_after_barge_in": null
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          23057.95,
+          16093.41
+        ],
+        "hops": [
+          {
+            "asr_ms": 888.11,
+            "llm_ms": 21848.69,
+            "tts_ms": 299.71,
+            "network_ms": 21.43,
+            "e2e_ms": 23057.95
+          },
+          {
+            "asr_ms": 842.02,
+            "llm_ms": 15087.79,
+            "tts_ms": 142.29,
+            "network_ms": 21.32,
+            "e2e_ms": 16093.41
+          }
+        ],
+        "p50_ms": 19575.68,
+        "p95_ms": 22709.72,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 865.07,
+            "p95_ms": 885.81,
+            "n": 2
+          },
+          "llm_ms": {
+            "p50_ms": 18468.24,
+            "p95_ms": 21510.64,
+            "n": 2
+          },
+          "tts_ms": {
+            "p50_ms": 221.0,
+            "p95_ms": 291.84,
+            "n": 2
+          },
+          "network_ms": {
+            "p50_ms": 21.38,
+            "p95_ms": 21.42,
+            "n": 2
+          },
+          "e2e_ms": {
+            "p50_ms": 19575.68,
+            "p95_ms": 22709.72,
+            "n": 2
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 2
+      },
+      "wall_seconds": 74.9
+    },
+    {
+      "id": "out_of_scope",
+      "title": "Out-of-scope refusal",
+      "goal": "Ask about the weather in Tokyo, which is out of scope.",
+      "caller_turns": [
+        {
+          "text": "What's the weather in Tokyo?",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "What's the weather in Tokyo?"
+      ],
+      "caller_wer": 0.0,
+      "agent_turns": [
+        {
+          "text": "I can't help with that, but I can help with refunds, complaints, bookings, or ticket status.",
+          "backend": "llm",
+          "tool_calls": []
+        }
+      ],
+      "response_asr": "I can't help with that, but I can help with refunds, complaints, bookings, or ticket status.",
+      "response_asr_wer": 0.0,
+      "tool_calls": [],
+      "expected_tools": [],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": []
+      },
+      "task_success": true,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": true,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": false,
+        "events": 0,
+        "frames_after_barge_in": null
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          19959.77
+        ],
+        "hops": [
+          {
+            "asr_ms": 891.81,
+            "llm_ms": 18759.18,
+            "tts_ms": 287.05,
+            "network_ms": 21.72,
+            "e2e_ms": 19959.77
+          }
+        ],
+        "p50_ms": 19959.77,
+        "p95_ms": 19959.77,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 891.81,
+            "p95_ms": 891.81,
+            "n": 1
+          },
+          "llm_ms": {
+            "p50_ms": 18759.18,
+            "p95_ms": 18759.18,
+            "n": 1
+          },
+          "tts_ms": {
+            "p50_ms": 287.05,
+            "p95_ms": 287.05,
+            "n": 1
+          },
+          "network_ms": {
+            "p50_ms": 21.72,
+            "p95_ms": 21.72,
+            "n": 1
+          },
+          "e2e_ms": {
+            "p50_ms": 19959.77,
+            "p95_ms": 19959.77,
+            "n": 1
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 1
+      },
+      "wall_seconds": 51.4
+    },
+    {
+      "id": "barge_in",
+      "title": "Barge-in during status response",
+      "goal": "Ask for ticket status, then interrupt the answer to request a $30 refund for order B123 and confirm.",
+      "caller_turns": [
+        {
+          "text": "What is the status of ticket T-123456?",
+          "source": "fallback_error"
+        },
+        {
+          "text": "Actually, I need a refund for order B102 for thirty dollars.",
+          "source": "fallback_error"
+        },
+        {
+          "text": "Yes, confirm it.",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "What is the status of Ticket T-123456?",
+        "Actually, I need a refund for Order B 102 for $30.",
+        "Yes, confirm it."
+      ],
+      "caller_wer": 0.1212,
+      "agent_turns": [
+        {
+          "text": "Ticket T-123456 is open and is with the general queue. Anything else?",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "lookup_ticket",
+              "args": {
+                "ticket_id": "T-123456"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-123456",
+                "status": "open",
+                "queue": "the general queue"
+              }
+            }
+          ]
+        },
+        {
+          "text": "Just to confirm: a $30.00 refund for order B102. Should I go ahead?",
+          "backend": "llm",
+          "tool_calls": []
+        },
+        {
+          "text": "Refund request logged as T-6153F3CBDC. It's routed to billing and you'll get a text when it's reviewed.",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "create_ticket",
+              "args": {
+                "subject": "Refund for order B102 ($30.00)",
+                "category": "refund",
+                "priority": "normal"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-6153F3CBDC"
+              }
+            },
+            {
+              "tool": "classify_ticket",
+              "args": {
+                "ticket_id": "T-6153F3CBDC",
+                "category": "billing"
+              },
+              "seq": 1
+            },
+            {
+              "tool": "route_ticket",
+              "args": {
+                "ticket_id": "T-6153F3CBDC",
+                "queue": "billing"
+              },
+              "seq": 2
+            },
+            {
+              "tool": "notify_customer",
+              "args": {
+                "ticket_id": "T-6153F3CBDC",
+                "channel": "sms"
+              },
+              "seq": 3
+            }
+          ]
+        }
+      ],
+      "response_asr": "Refund requests logged as T6153F3 CBDC. It's routed to billing and you'll get a text when it's reviewed.",
+      "response_asr_wer": 0.1667,
+      "tool_calls": [
+        {
+          "tool": "lookup_ticket",
+          "args": {
+            "ticket_id": "T-123456"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-123456",
+            "status": "open",
+            "queue": "the general queue"
+          }
+        },
+        {
+          "tool": "create_ticket",
+          "args": {
+            "subject": "Refund for order B102 ($30.00)",
+            "category": "refund",
+            "priority": "normal"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-6153F3CBDC"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "ticket_id": "T-6153F3CBDC",
+            "category": "billing"
+          },
+          "seq": 1
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "ticket_id": "T-6153F3CBDC",
+            "queue": "billing"
+          },
+          "seq": 2
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "ticket_id": "T-6153F3CBDC",
+            "channel": "sms"
+          },
+          "seq": 3
+        }
+      ],
+      "expected_tools": [
+        {
+          "tool": "lookup_ticket",
+          "args": {
+            "ticket_id": "T-123456"
+          }
+        },
+        {
+          "tool": "create_ticket",
+          "args": {
+            "category": "refund"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "category": "billing"
+          }
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "queue": "billing"
+          }
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "channel": "sms"
+          }
+        }
+      ],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": [
+          {
+            "step": 0,
+            "expected_tool": "lookup_ticket",
+            "actual_tool": "lookup_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 1,
+            "expected_tool": "create_ticket",
+            "actual_tool": "create_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 2,
+            "expected_tool": "classify_ticket",
+            "actual_tool": "classify_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 3,
+            "expected_tool": "route_ticket",
+            "actual_tool": "route_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 4,
+            "expected_tool": "notify_customer",
+            "actual_tool": "notify_customer",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          }
+        ]
+      },
+      "task_success": true,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": true,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": true,
+        "events": 1,
+        "frames_after_barge_in": 1
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          21096.76,
+          16551.59,
+          14502.15
+        ],
+        "hops": [
+          {
+            "asr_ms": 1021.26,
+            "llm_ms": 19730.85,
+            "tts_ms": 320.12,
+            "network_ms": 24.53,
+            "e2e_ms": 21096.76
+          },
+          {
+            "asr_ms": 835.47,
+            "llm_ms": 15448.34,
+            "tts_ms": 246.4,
+            "network_ms": 21.38,
+            "e2e_ms": 16551.59
+          },
+          {
+            "asr_ms": 728.02,
+            "llm_ms": 13468.19,
+            "tts_ms": 284.51,
+            "network_ms": 21.42,
+            "e2e_ms": 14502.15
+          }
+        ],
+        "p50_ms": 16551.59,
+        "p95_ms": 20642.24,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 835.47,
+            "p95_ms": 1002.68,
+            "n": 3
+          },
+          "llm_ms": {
+            "p50_ms": 15448.34,
+            "p95_ms": 19302.6,
+            "n": 3
+          },
+          "tts_ms": {
+            "p50_ms": 284.51,
+            "p95_ms": 316.56,
+            "n": 3
+          },
+          "network_ms": {
+            "p50_ms": 21.42,
+            "p95_ms": 24.22,
+            "n": 3
+          },
+          "e2e_ms": {
+            "p50_ms": 16551.59,
+            "p95_ms": 20642.24,
+            "n": 3
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 3
+      },
+      "wall_seconds": 90.6
+    },
+    {
+      "id": "mishear_correct",
+      "title": "Misheard order number corrected",
+      "goal": "Request a refund for B123, correct it to B124, then confirm.",
+      "caller_turns": [
+        {
+          "text": "I need a refund for order B123 for thirty dollars.",
+          "source": "fallback_error"
+        },
+        {
+          "text": "No, I said B124.",
+          "source": "fallback_error"
+        },
+        {
+          "text": "Yes, confirm the refund.",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "I need a refund for Order B123 for $30.",
+        "No, I said B124.",
+        "Yes, confirm the refund."
+      ],
+      "caller_wer": 0.0667,
+      "agent_turns": [
+        {
+          "text": "Just to confirm: a $30.00 refund for order B123. Should I go ahead?",
+          "backend": "llm",
+          "tool_calls": []
+        },
+        {
+          "text": "Just to confirm: a $30.00 refund for order B124. Should I go ahead?",
+          "backend": "llm",
+          "tool_calls": []
+        },
+        {
+          "text": "Refund request logged as T-CD17191538. It's routed to billing and you'll get a text when it's reviewed.",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "create_ticket",
+              "args": {
+                "subject": "Refund for order B124 ($30.00)",
+                "category": "refund",
+                "priority": "normal"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-CD17191538"
+              }
+            },
+            {
+              "tool": "classify_ticket",
+              "args": {
+                "ticket_id": "T-CD17191538",
+                "category": "billing"
+              },
+              "seq": 1
+            },
+            {
+              "tool": "route_ticket",
+              "args": {
+                "ticket_id": "T-CD17191538",
+                "queue": "billing"
+              },
+              "seq": 2
+            },
+            {
+              "tool": "notify_customer",
+              "args": {
+                "ticket_id": "T-CD17191538",
+                "channel": "sms"
+              },
+              "seq": 3
+            }
+          ]
+        }
+      ],
+      "response_asr": "Refund request the law of does TCD 17191,538, it's routed to billing and you'll get a text when it's reviewed.",
+      "response_asr_wer": 0.3889,
+      "tool_calls": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "subject": "Refund for order B124 ($30.00)",
+            "category": "refund",
+            "priority": "normal"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-CD17191538"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "ticket_id": "T-CD17191538",
+            "category": "billing"
+          },
+          "seq": 1
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "ticket_id": "T-CD17191538",
+            "queue": "billing"
+          },
+          "seq": 2
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "ticket_id": "T-CD17191538",
+            "channel": "sms"
+          },
+          "seq": 3
+        }
+      ],
+      "expected_tools": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "category": "refund",
+            "subject": "B124"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "category": "billing"
+          }
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "queue": "billing"
+          }
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "channel": "sms"
+          }
+        }
+      ],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": [
+          {
+            "step": 0,
+            "expected_tool": "create_ticket",
+            "actual_tool": "create_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 1,
+            "expected_tool": "classify_ticket",
+            "actual_tool": "classify_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 2,
+            "expected_tool": "route_ticket",
+            "actual_tool": "route_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 3,
+            "expected_tool": "notify_customer",
+            "actual_tool": "notify_customer",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          }
+        ]
+      },
+      "task_success": true,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": true,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": false,
+        "events": 0,
+        "frames_after_barge_in": null
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          22413.32,
+          14755.32,
+          18273.24
+        ],
+        "hops": [
+          {
+            "asr_ms": 833.31,
+            "llm_ms": 21264.61,
+            "tts_ms": 293.45,
+            "network_ms": 21.95,
+            "e2e_ms": 22413.32
+          },
+          {
+            "asr_ms": 722.18,
+            "llm_ms": 13755.21,
+            "tts_ms": 257.02,
+            "network_ms": 20.92,
+            "e2e_ms": 14755.32
+          },
+          {
+            "asr_ms": 847.39,
+            "llm_ms": 17141.85,
+            "tts_ms": 262.62,
+            "network_ms": 21.38,
+            "e2e_ms": 18273.24
+          }
+        ],
+        "p50_ms": 18273.24,
+        "p95_ms": 21999.31,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 833.31,
+            "p95_ms": 845.98,
+            "n": 3
+          },
+          "llm_ms": {
+            "p50_ms": 17141.85,
+            "p95_ms": 20852.33,
+            "n": 3
+          },
+          "tts_ms": {
+            "p50_ms": 262.62,
+            "p95_ms": 290.37,
+            "n": 3
+          },
+          "network_ms": {
+            "p50_ms": 21.38,
+            "p95_ms": 21.89,
+            "n": 3
+          },
+          "e2e_ms": {
+            "p50_ms": 18273.24,
+            "p95_ms": 21999.31,
+            "n": 3
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 3
+      },
+      "wall_seconds": 103.3
+    },
+    {
+      "id": "code_switch",
+      "title": "Spanish/English code-switching",
+      "goal": "In a mix of Spanish and English, request a $30 refund for order B123 and confirm.",
+      "caller_turns": [
+        {
+          "text": "Hola, I need a refund for order B123 for 30 dollars, gracias.",
+          "source": "fallback_error"
+        },
+        {
+          "text": "S\u00ed, confirm.",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "Hola, I need a refund for Order B123 for $30, gracias.",
+        "Ch\u00ed confirm."
+      ],
+      "caller_wer": 0.3333,
+      "agent_turns": [
+        {
+          "text": "Just to confirm: a $30.00 refund for order B123. Should I go ahead?",
+          "backend": "llm",
+          "tool_calls": []
+        },
+        {
+          "text": "Refund request logged as T-A718B2BB5D. It's routed to billing and you'll get a text when it's reviewed.",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "create_ticket",
+              "args": {
+                "subject": "Refund for order B123 ($30.00)",
+                "category": "refund",
+                "priority": "normal"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-A718B2BB5D"
+              }
+            },
+            {
+              "tool": "classify_ticket",
+              "args": {
+                "ticket_id": "T-A718B2BB5D",
+                "category": "billing"
+              },
+              "seq": 1
+            },
+            {
+              "tool": "route_ticket",
+              "args": {
+                "ticket_id": "T-A718B2BB5D",
+                "queue": "billing"
+              },
+              "seq": 2
+            },
+            {
+              "tool": "notify_customer",
+              "args": {
+                "ticket_id": "T-A718B2BB5D",
+                "channel": "sms"
+              },
+              "seq": 3
+            }
+          ]
+        }
+      ],
+      "response_asr": "Refund requests law bid as T-718B2BB5D. It's routed to billing and you'll get a text when it's reviewed.",
+      "response_asr_wer": 0.2222,
+      "tool_calls": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "subject": "Refund for order B123 ($30.00)",
+            "category": "refund",
+            "priority": "normal"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-A718B2BB5D"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "ticket_id": "T-A718B2BB5D",
+            "category": "billing"
+          },
+          "seq": 1
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "ticket_id": "T-A718B2BB5D",
+            "queue": "billing"
+          },
+          "seq": 2
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "ticket_id": "T-A718B2BB5D",
+            "channel": "sms"
+          },
+          "seq": 3
+        }
+      ],
+      "expected_tools": [
+        {
+          "tool": "create_ticket",
+          "args": {
+            "category": "refund"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "category": "billing"
+          }
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "queue": "billing"
+          }
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "channel": "sms"
+          }
+        }
+      ],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": [
+          {
+            "step": 0,
+            "expected_tool": "create_ticket",
+            "actual_tool": "create_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 1,
+            "expected_tool": "classify_ticket",
+            "actual_tool": "classify_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 2,
+            "expected_tool": "route_ticket",
+            "actual_tool": "route_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 3,
+            "expected_tool": "notify_customer",
+            "actual_tool": "notify_customer",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          }
+        ]
+      },
+      "task_success": true,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": true,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": false,
+        "events": 0,
+        "frames_after_barge_in": null
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          22996.12,
+          15359.11
+        ],
+        "hops": [
+          {
+            "asr_ms": 948.88,
+            "llm_ms": 21727.8,
+            "tts_ms": 298.77,
+            "network_ms": 20.67,
+            "e2e_ms": 22996.12
+          },
+          {
+            "asr_ms": 803.62,
+            "llm_ms": 14313.95,
+            "tts_ms": 220.13,
+            "network_ms": 21.41,
+            "e2e_ms": 15359.11
+          }
+        ],
+        "p50_ms": 19177.61,
+        "p95_ms": 22614.27,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 876.25,
+            "p95_ms": 941.62,
+            "n": 2
+          },
+          "llm_ms": {
+            "p50_ms": 18020.88,
+            "p95_ms": 21357.11,
+            "n": 2
+          },
+          "tts_ms": {
+            "p50_ms": 259.45,
+            "p95_ms": 294.84,
+            "n": 2
+          },
+          "network_ms": {
+            "p50_ms": 21.04,
+            "p95_ms": 21.37,
+            "n": 2
+          },
+          "e2e_ms": {
+            "p50_ms": 19177.61,
+            "p95_ms": 22614.27,
+            "n": 2
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 2
+      },
+      "wall_seconds": 75.3
+    },
+    {
+      "id": "multi_turn",
+      "title": "Multi-turn status then complaint",
+      "goal": "Check ticket T-123456, then file a complaint about order B123 and confirm.",
+      "caller_turns": [
+        {
+          "text": "What is the status of ticket T-123456?",
+          "source": "fallback_error"
+        },
+        {
+          "text": "I also want to file a complaint about order B123.",
+          "source": "fallback_error"
+        },
+        {
+          "text": "Yes, go ahead.",
+          "source": "fallback_error"
+        }
+      ],
+      "caller_transcripts": [
+        "What is the status of Ticket T-123456?",
+        "I also want to file a complaint about Order B123.",
+        "Yes, go ahead."
+      ],
+      "caller_wer": 0.0,
+      "agent_turns": [
+        {
+          "text": "Ticket T-123456 is open and is with the general queue. Anything else?",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "lookup_ticket",
+              "args": {
+                "ticket_id": "T-123456"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-123456",
+                "status": "open",
+                "queue": "the general queue"
+              }
+            }
+          ]
+        },
+        {
+          "text": "Just to confirm: a complaint about order B123. Should I go ahead?",
+          "backend": "llm",
+          "tool_calls": []
+        },
+        {
+          "text": "Complaint registered as T-12ED0DB4AB and routed to support. We'll text you updates.",
+          "backend": "llm",
+          "tool_calls": [
+            {
+              "tool": "create_ticket",
+              "args": {
+                "subject": "Complaint about order B123",
+                "category": "complaint",
+                "priority": "high"
+              },
+              "seq": 0,
+              "result": {
+                "ticket_id": "T-12ED0DB4AB"
+              }
+            },
+            {
+              "tool": "classify_ticket",
+              "args": {
+                "ticket_id": "T-12ED0DB4AB",
+                "category": "complaint"
+              },
+              "seq": 1
+            },
+            {
+              "tool": "route_ticket",
+              "args": {
+                "ticket_id": "T-12ED0DB4AB",
+                "queue": "support"
+              },
+              "seq": 2
+            },
+            {
+              "tool": "notify_customer",
+              "args": {
+                "ticket_id": "T-12ED0DB4AB",
+                "channel": "sms"
+              },
+              "seq": 3
+            }
+          ]
+        }
+      ],
+      "response_asr": "Complaint register it as T12ED 0DB4AB and relative to support. Real-text you updates.",
+      "response_asr_wer": 0.4615,
+      "tool_calls": [
+        {
+          "tool": "lookup_ticket",
+          "args": {
+            "ticket_id": "T-123456"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-123456",
+            "status": "open",
+            "queue": "the general queue"
+          }
+        },
+        {
+          "tool": "create_ticket",
+          "args": {
+            "subject": "Complaint about order B123",
+            "category": "complaint",
+            "priority": "high"
+          },
+          "seq": 0,
+          "result": {
+            "ticket_id": "T-12ED0DB4AB"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "ticket_id": "T-12ED0DB4AB",
+            "category": "complaint"
+          },
+          "seq": 1
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "ticket_id": "T-12ED0DB4AB",
+            "queue": "support"
+          },
+          "seq": 2
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "ticket_id": "T-12ED0DB4AB",
+            "channel": "sms"
+          },
+          "seq": 3
+        }
+      ],
+      "expected_tools": [
+        {
+          "tool": "lookup_ticket",
+          "args": {
+            "ticket_id": "T-123456"
+          }
+        },
+        {
+          "tool": "create_ticket",
+          "args": {
+            "category": "complaint"
+          }
+        },
+        {
+          "tool": "classify_ticket",
+          "args": {
+            "category": "complaint"
+          }
+        },
+        {
+          "tool": "route_ticket",
+          "args": {
+            "queue": "support"
+          }
+        },
+        {
+          "tool": "notify_customer",
+          "args": {
+            "channel": "sms"
+          }
+        }
+      ],
+      "tool_score": {
+        "tool_choice_accuracy": 1.0,
+        "argument_validity": 1.0,
+        "order_correctness": 1.0,
+        "extra_calls": 0,
+        "details": [
+          {
+            "step": 0,
+            "expected_tool": "lookup_ticket",
+            "actual_tool": "lookup_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 1,
+            "expected_tool": "create_ticket",
+            "actual_tool": "create_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 2,
+            "expected_tool": "classify_ticket",
+            "actual_tool": "classify_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 3,
+            "expected_tool": "route_ticket",
+            "actual_tool": "route_ticket",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          },
+          {
+            "step": 4,
+            "expected_tool": "notify_customer",
+            "actual_tool": "notify_customer",
+            "tool_ok": true,
+            "args_ok": true,
+            "missing_args": []
+          }
+        ]
+      },
+      "task_success": false,
+      "checks": {
+        "tools_ok": true,
+        "phrase_ok": false,
+        "refusal_ok": true,
+        "confirmation_ok": true,
+        "code_switch_ok": true
+      },
+      "barge_in": {
+        "expected": false,
+        "events": 0,
+        "frames_after_barge_in": null
+      },
+      "hallucination": {
+        "label": "pass",
+        "reason": "",
+        "mode": "llm"
+      },
+      "latency": {
+        "turns": [
+          21005.81,
+          16485.65,
+          18589.33
+        ],
+        "hops": [
+          {
+            "asr_ms": 887.82,
+            "llm_ms": 19776.2,
+            "tts_ms": 320.27,
+            "network_ms": 21.53,
+            "e2e_ms": 21005.81
+          },
+          {
+            "asr_ms": 836.92,
+            "llm_ms": 15463.92,
+            "tts_ms": 164.4,
+            "network_ms": 20.41,
+            "e2e_ms": 16485.65
+          },
+          {
+            "asr_ms": 752.92,
+            "llm_ms": 17565.39,
+            "tts_ms": 249.49,
+            "network_ms": 21.52,
+            "e2e_ms": 18589.33
+          }
+        ],
+        "p50_ms": 18589.33,
+        "p95_ms": 20764.16,
+        "per_hop": {
+          "asr_ms": {
+            "p50_ms": 836.92,
+            "p95_ms": 882.73,
+            "n": 3
+          },
+          "llm_ms": {
+            "p50_ms": 17565.39,
+            "p95_ms": 19555.12,
+            "n": 3
+          },
+          "tts_ms": {
+            "p50_ms": 249.49,
+            "p95_ms": 313.19,
+            "n": 3
+          },
+          "network_ms": {
+            "p50_ms": 21.52,
+            "p95_ms": 21.53,
+            "n": 3
+          },
+          "e2e_ms": {
+            "p50_ms": 18589.33,
+            "p95_ms": 20764.16,
+            "n": 3
+          }
+        },
+        "under_budget": 0,
+        "turn_count": 3
+      },
+      "wall_seconds": 101.8
+    }
+  ]
+}

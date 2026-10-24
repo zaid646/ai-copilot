@@ -133,7 +133,15 @@ def _extract_text(data: dict[str, Any]) -> tuple[str, dict[str, int]]:
     reraise=True,
 )
 def _chat_lmstudio(
-    system: str, user: str, temperature: float, think: bool
+    system: str,
+    user: str,
+    temperature: float,
+    think: bool,
+    seed: int,
+    model: str | None = None,
+    schema: dict[str, Any] | None = None,
+    max_tokens: int | None = None,
+    base_url: str | None = None,
 ) -> tuple[str, dict[str, int]]:
     """OpenAI-compatible /v1/chat/completions served by LM Studio (local).
 
@@ -141,22 +149,33 @@ def _chat_lmstudio(
     cuts latency ~3x on the 9B model by suppressing reasoning tokens.
     """
     usr = user if think else f"{user}\n/no_think"
+    body: dict[str, Any] = {
+        "model": model or settings.lmstudio_chat_model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": usr},
+        ],
+        "temperature": temperature,
+        "max_tokens": max_tokens or settings.lmstudio_chat_max_tokens,
+        "seed": seed,
+    }
+    if schema:
+        body["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "structured_output",
+                "strict": True,
+                "schema": schema,
+            },
+        }
     try:
         resp = httpx.post(
-            f"{settings.lmstudio_base_url}/chat/completions",
+            f"{base_url or settings.lmstudio_base_url}/chat/completions",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {settings.lmstudio_api_key}",
             },
-            json={
-                "model": settings.lmstudio_chat_model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": usr},
-                ],
-                "temperature": temperature,
-                "max_tokens": settings.lmstudio_chat_max_tokens,
-            },
+            json=body,
             timeout=600.0,
         )
     except httpx.HTTPError as exc:
@@ -187,30 +206,49 @@ def _chat_lmstudio(
     reraise=True,
 )
 def _chat_openai_compat(
-    system: str, user: str, temperature: float, think: bool, json_mode: bool
+    system: str,
+    user: str,
+    temperature: float,
+    think: bool,
+    json_mode: bool,
+    seed: int,
+    model: str | None = None,
+    schema: dict[str, Any] | None = None,
+    max_tokens: int | None = None,
+    base_url: str | None = None,
 ) -> tuple[str, dict[str, int]]:
     """OpenAI-compatible /v1/chat/completions (e.g. vLLM on a Vast.ai GPU).
 
     Thinking is controlled via vLLM's `chat_template_kwargs`; `json_mode` adds
     `response_format={"type": "json_object"}` for guaranteed JSON output.
     """
-    if not settings.openai_chat_base_url:
-        raise LLMError("OPENAI_CHAT_BASE_URL is not set")
+    if not base_url:
+        raise LLMError("OPENAI_CHAT_BASE_URL is not set for openai_compat provider")
     body: dict[str, Any] = {
-        "model": settings.openai_chat_model,
+        "model": model or settings.openai_chat_model,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
         "temperature": temperature,
-        "max_tokens": settings.openai_chat_max_tokens,
+        "max_tokens": max_tokens or settings.openai_chat_max_tokens,
+        "seed": seed,
         "chat_template_kwargs": {"enable_thinking": think},
     }
-    if json_mode:
+    if schema:
+        body["response_format"] = {
+            "type": "json_schema",
+            "json_schema": {
+                "name": "structured_output",
+                "strict": True,
+                "schema": schema,
+            },
+        }
+    elif json_mode:
         body["response_format"] = {"type": "json_object"}
     try:
         resp = httpx.post(
-            f"{settings.openai_chat_base_url}/chat/completions",
+            f"{base_url}/chat/completions",
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {settings.openai_api_key}",
@@ -246,11 +284,21 @@ def chat_full(
     namespace: str = "chat",
     think: bool | None = None,
     json_mode: bool = False,
+    seed: int | None = None,
+    model: str | None = None,
+    schema: dict[str, Any] | None = None,
+    max_tokens: int | None = None,
+    use_cache: bool = True,
+    provider: str | None = None,
+    base_url: str | None = None,
 ) -> dict[str, Any]:
     """Return {'text', 'usage'} for a single-turn completion (disk-cached).
 
     `think` toggles reasoning traces; `json_mode` requests a JSON object from
     OpenAI-compatible servers. Both are part of the cache key.
+
+    `provider`/`base_url` override the configured provider for this call only
+    (e.g. voice agent prefers vLLM GPU with LM Studio fallback).
     """
     temp = settings.llm_temperature if temperature is None else temperature
     if think is None:
@@ -262,24 +310,60 @@ def chat_full(
         use_think = not disabled
     else:
         use_think = think
-    model = _active_chat_model()
+    provider = provider or settings.chat_provider
+    base_url = base_url or {
+        "lmstudio": settings.lmstudio_base_url,
+        "openai_compat": settings.openai_chat_base_url,
+    }.get(provider)
+    model = model or {
+        "lmstudio": settings.lmstudio_chat_model,
+        "openai_compat": settings.openai_chat_model,
+    }.get(provider, _active_chat_model())
+    use_seed = settings.llm_seed if seed is None else seed
+    schema_key = json.dumps(schema, sort_keys=True, separators=(",", ":")) if schema else ""
     key = cache.key_for(
         model,
         temp,
         system,
-        f"{user}\x00think={int(use_think)}\x00json={int(json_mode)}",
+        (
+            f"{user}\x00think={int(use_think)}\x00json={int(json_mode)}\x00"
+            f"seed={use_seed}\x00schema={schema_key}\x00max_tokens={max_tokens or 0}"
+            f"\x00provider={provider}\x00base_url={base_url or ""}"
+        ),
         namespace,
     )
 
-    hit = cache.get(key)
-    if hit is not None:
-        hit["usage"]["cached"] = True
-        return hit
+    if use_cache:
+        hit = cache.get(key)
+        if hit is not None:
+            hit["usage"]["cached"] = True
+            return hit
 
-    if settings.chat_provider == "lmstudio":
-        text, usage = _chat_lmstudio(system, user, temp, use_think)
-    elif settings.chat_provider == "openai_compat":
-        text, usage = _chat_openai_compat(system, user, temp, use_think, json_mode)
+    if provider == "lmstudio":
+        text, usage = _chat_lmstudio(
+            system,
+            user,
+            temp,
+            use_think,
+            use_seed,
+            base_url=base_url,
+            model=model,
+            schema=schema,
+            max_tokens=max_tokens,
+        )
+    elif provider == "openai_compat":
+        text, usage = _chat_openai_compat(
+            system,
+            user,
+            temp,
+            use_think,
+            json_mode,
+            use_seed,
+            base_url=base_url,
+            model=model,
+            schema=schema,
+            max_tokens=max_tokens,
+        )
     else:
         payload = {
             "systemInstruction": {"parts": [{"text": system}]},
@@ -287,6 +371,7 @@ def chat_full(
             "generationConfig": {
                 "temperature": temp,
                 "maxOutputTokens": settings.llm_max_output_tokens,
+                "seed": use_seed,
                 "thinkingConfig": {"thinkingBudget": 0},
             },
         }
@@ -294,7 +379,8 @@ def chat_full(
         text, usage = _extract_text(data)
     usage["cached"] = False
     result = {"text": text, "usage": usage}
-    cache.set(key, model, namespace, result)
+    if use_cache:
+        cache.set(key, model, namespace, result)
     return result
 
 
@@ -304,12 +390,30 @@ def chat(
     temperature: float | None = None,
     namespace: str = "chat",
     think: bool | None = None,
+    seed: int | None = None,
 ) -> str:
-    return chat_full(system, user, temperature=temperature, namespace=namespace, think=think)["text"]
+    return chat_full(
+        system,
+        user,
+        temperature=temperature,
+        namespace=namespace,
+        think=think,
+        seed=seed,
+    )["text"]
 
 
 def chat_json(
-    system: str, user: str, temperature: float | None = None, think: bool | None = None
+    system: str,
+    user: str,
+    temperature: float | None = None,
+    think: bool | None = None,
+    seed: int | None = None,
+    model: str | None = None,
+    schema: dict[str, Any] | None = None,
+    max_tokens: int | None = None,
+    use_cache: bool = True,
+    provider: str | None = None,
+    base_url: str | None = None,
 ) -> dict[str, Any]:
     text = chat_full(
         system,
@@ -318,6 +422,13 @@ def chat_json(
         namespace="json",
         think=think,
         json_mode=True,
+        seed=seed,
+        model=model,
+        schema=schema,
+        max_tokens=max_tokens,
+        use_cache=use_cache,
+        provider=provider,
+        base_url=base_url,
     )["text"]
     return _extract_json(text)
 

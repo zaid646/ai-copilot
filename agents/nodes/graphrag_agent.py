@@ -40,14 +40,24 @@ def graphrag_agent_node(state: dict[str, Any]) -> dict[str, Any]:
         top_k = int(spec.get("top_k") or args.get("top_k") or 5)
         res = dispatch(
             "graphrag_search",
-            {"query": query, "top_k": top_k, "source_filter": source_filter},
+            {
+                "query": query,
+                "top_k": top_k,
+                "source_filter": source_filter,
+                "tenant_id": state.get("tenant_id") or "default",
+            },
         )
         # One-shot retry: if the filtered search found nothing, widen the query.
         if not res.get("ok") and source_filter:
             widened = f"{domain} policy {reformulate_query(raw, intent)}"
             res = dispatch(
                 "graphrag_search",
-                {"query": widened, "top_k": top_k, "source_filter": source_filter},
+                {
+                    "query": widened,
+                    "top_k": top_k,
+                    "source_filter": source_filter,
+                    "tenant_id": state.get("tenant_id") or "default",
+                },
             )
             notes["retried"] = True
         if res.get("ok"):

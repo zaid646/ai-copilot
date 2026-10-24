@@ -6,6 +6,7 @@ guarantees every result is a contract envelope even if a tool raises.
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextvars import ContextVar
 from typing import Any
 
 from core.logging import get_logger
@@ -16,6 +17,32 @@ from tools.kpi import compute_kpi
 from tools.sql_tool import run_sql
 
 log = get_logger("tools.registry")
+
+_TOOL_TRACE: ContextVar[list[dict[str, Any]] | None] = ContextVar("tool_trace", default=None)
+
+
+def reset_tool_trace() -> None:
+    _TOOL_TRACE.set([])
+
+
+def current_tool_trace() -> list[dict[str, Any]]:
+    trace = _TOOL_TRACE.get()
+    return list(trace or [])
+
+
+def _record_tool(name: str, args: dict[str, Any], result: dict[str, Any]) -> None:
+    trace = _TOOL_TRACE.get()
+    if trace is None:
+        return
+    trace.append(
+        {
+            "seq": len(trace),
+            "tool": name,
+            "args": dict(args or {}),
+            "ok": bool(result.get("ok", False)),
+            "error_code": result.get("error_code"),
+        }
+    )
 
 TOOLS: dict[str, dict[str, Any]] = {
     "run_sql": {
@@ -113,11 +140,15 @@ def tool_schemas() -> list[dict[str, Any]]:
 def dispatch(name: str, args: dict[str, Any] | None = None) -> dict[str, Any]:
     spec = TOOLS.get(name)
     if spec is None:
-        return err(ErrorCode.INPUT_INVALID, f"unknown tool {name!r}; valid: {tool_names()}")
+        result = err(ErrorCode.INPUT_INVALID, f"unknown tool {name!r}; valid: {tool_names()}")
+        _record_tool(name, args or {}, result)
+        return result
     try:
-        return spec["fn"](**(args or {}))
+        result = spec["fn"](**(args or {}))
     except TypeError as exc:
-        return err(ErrorCode.INPUT_INVALID, f"bad arguments for {name}: {exc}")
+        result = err(ErrorCode.INPUT_INVALID, f"bad arguments for {name}: {exc}")
     except Exception as exc:  # noqa: BLE001 - never leak a raw crash to the graph
         log.error("tool crashed", tool=name, error=str(exc))
-        return err(ErrorCode.TOOL_ERROR, f"{name} crashed: {type(exc).__name__}: {exc}")
+        result = err(ErrorCode.TOOL_ERROR, f"{name} crashed: {type(exc).__name__}: {exc}")
+    _record_tool(name, args or {}, result)
+    return result

@@ -1,0 +1,23 @@
+{{- if .Values.neo4j.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-copilot.fullname" . }}-neo4j
+  labels:
+    {{- include "ai-copilot.labels" . | nindent 4 }}
+    component: neo4j
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "ai-copilot.selectorLabels" . | nindent 4 }}
+    component: neo4j
+  ports:
+    - name: bolt
+      protocol: TCP
+      port: {{ .Values.neo4j.service.boltPort }}
+      targetPort: {{ .Values.neo4j.containerPort }}
+    - name: http
+      protocol: TCP
+      port: {{ .Values.neo4j.service.httpPort }}
+      targetPort: {{ .Values.neo4j.httpPort }}
+{{- end }}

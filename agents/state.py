@@ -31,6 +31,8 @@ class AgentState(TypedDict, total=False):
     history: list[dict[str, Any]]  # prior turns: [{"role","content"}]
     answer: str
     citations: list[dict[str, Any]]
+    tenant_id: str
+    voice_mode: bool
 
     # --- planning / working memory ---
     domain: str  # retail | finance (drives retrieval source filter)

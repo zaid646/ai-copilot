@@ -1,0 +1,106 @@
+# Enterprise Analytics Copilot — Helm Chart
+
+## Prerequisites
+
+- Kubernetes cluster (K3s, kind, EKS, GKE, AKS)
+- Helm 3.x
+- StorageClass for Postgres/Neo4j PVCs (default: `standard`)
+
+## Quickstart (local K3s)
+
+```bash
+# Add/upgrade the Helm chart
+helm upgrade --install ai-copilot ./deploy/helm/ai-copilot \
+  --namespace default \
+  --create-namespace
+
+# Port-forward the API and Streamlit UI
+kubectl port-forward svc/ai-copilot-api 8000:80
+kubectl port-forward svc/ai-copilot-frontend 8501:80
+
+# Open Streamlit at http://localhost:8501
+# Default creds: analyst / analyst123  |  admin / admin123
+```
+
+## Uninstall
+
+```bash
+helm uninstall ai-copilot --namespace default
+```
+
+## Configuration
+
+| Parameter | Description | Default |
+|---|---|---|
+| `global.imageRegistry` | Container registry prefix | `registry.example.com` |
+| `api.replicaCount` | FastAPI replica count | `1` |
+| `api.image.repository` | API image repository | `registry.example.com/ai-copilot/api` |
+| `api.image.tag` | API image tag | `latest` |
+| `api.resources.limits` | API resource limits | CPU 500m / Mem 512Mi |
+| `api.autoscaling.enabled` | Enable HPA for API | `true` |
+| `api.autoscaling.minReplicas` | API HPA min replicas | `1` |
+| `api.autoscaling.maxReplicas` | API HPA max replicas | `3` |
+| `frontend.replicaCount` | Streamlit replica count | `1` |
+| `frontend.image.repository` | Frontend image repository | `registry.example.com/ai-copilot/frontend` |
+| `frontend.image.tag` | Frontend image tag | `latest` |
+| `postgres.enabled` | Enable Postgres | `true` |
+| `postgres.persistence.size` | Postgres PVC size | `8Gi` |
+| `neo4j.enabled` | Enable Neo4j | `true` |
+| `neo4j.persistence.size` | Neo4j PVC size | `8Gi` |
+| `configmap.data` | ConfigMap environment variables | see values.yaml |
+| `secrets.data` | Secret environment variables | see values.yaml |
+
+## Secrets
+
+Sensitive values (JWT_SECRET, API keys, passwords) should be provided via
+`secrets.data` in `values.yaml` or via a separate `secrets.yaml` file:
+
+```bash
+helm upgrade --install ai-copilot ./deploy/helm/ai-copilot \
+  --values values.yaml \
+  --set secrets.JWT_SECRET=my-secret-key \
+  --set secrets.OPENAI_API_KEY=sk-...
+```
+
+Never commit real secrets to version control. Use a secrets manager
+(Sealed Secrets, External Secrets, Azure Key Vault, etc.) for production.
+
+## Values file examples
+
+### Local K3s
+
+```yaml
+# values-local.yaml
+global:
+  imageRegistry: localhost:5000
+ingress:
+  enabled: false
+```
+
+### Production (AWS/GCP/Azure)
+
+```yaml
+# values-prod.yaml
+api:
+  replicaCount: 3
+  autoscaling:
+    minReplicas: 2
+    maxReplicas: 10
+neo4j:
+  resources:
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+ingress:
+  enabled: true
+  host: copilot.example.com
+  tls:
+    enabled: true
+```
+
+## Notes
+
+- Postgres and Neo4j use `StatefulSet` with persistent volume claims.
+- ConfigMap holds non-sensitive env vars; Secret holds sensitive ones.
+- HPA is enabled by default for both API and frontend.
+- Health probes: API exposes `/health` on its HTTP port.

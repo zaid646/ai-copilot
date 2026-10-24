@@ -1,4 +1,4 @@
-.PHONY: help up down logs seed ingest test lint api frontend clean
+.PHONY: help up down logs seed ingest test lint api frontend clean helm-template kubeval terraform-validate helm-upgrade helm-uninstall
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -36,3 +36,20 @@ frontend:  ## Run the Streamlit app locally
 
 clean:  ## Remove caches
 	find . -type d -name __pycache__ -prune -exec rm -rf {} + ; rm -rf .ruff_cache .pytest_cache
+
+helm-template:  ## Render Helm chart templates to stdout
+	helm template ai-copilot ./deploy/helm/ai-copilot
+
+kubeval:  ## Validate rendered Helm manifests with kubeval
+	helm template ai-copilot ./deploy/helm/ai-copilot > /tmp/ai-copilot-rendered.yaml
+	kubeval /tmp/ai-copilot-rendered.yaml --strict
+	kubeval deploy/k8s/*.yaml --strict
+
+terraform-validate:  ## Validate Terraform configuration
+	cd deploy/terraform/k3s-azure && terraform init && terraform validate
+
+helm-upgrade:  ## Upgrade/install Helm chart (local K3s)
+	helm upgrade --install ai-copilot ./deploy/helm/ai-copilot --namespace default --create-namespace
+
+helm-uninstall:  ## Uninstall Helm chart
+	helm uninstall ai-copilot --namespace default
