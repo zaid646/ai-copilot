@@ -1,0 +1,94 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ai-copilot.fullname" . }}-api
+  labels:
+    {{- include "ai-copilot.labels" . | nindent 4 }}
+    component: api
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ai-copilot.selectorLabels" . | nindent 6 }}
+      component: api
+  template:
+    metadata:
+      labels:
+        {{- include "ai-copilot.selectorLabels" . | nindent 8 }}
+        component: api
+    spec:
+      containers:
+        - name: api
+          image: {{ .Values.global.imageRegistry }}/{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.api.containerPort }}
+              name: http
+          env:
+            - name: POSTGRES_HOST
+              value: {{ .Values.api.env.POSTGRES_HOST }}
+            - name: POSTGRES_PORT
+              value: {{ .Values.api.env.POSTGRES_PORT }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ai-copilot.fullname" . }}-secrets
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ai-copilot.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ai-copilot.fullname" . }}-secrets
+                  key: POSTGRES_DB
+            - name: NEO4J_URI
+              value: {{ .Values.api.env.NEO4J_URI }}
+            - name: NEO4J_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ai-copilot.fullname" . }}-secrets
+                  key: NEO4J_PASSWORD
+            - name: CHAT_PROVIDER
+              value: {{ .Values.api.env.CHAT_PROVIDER }}
+            - name: EMBED_PROVIDER
+              value: {{ .Values.api.env.EMBED_PROVIDER }}
+            - name: OPENAI_CHAT_BASE_URL
+              value: {{ .Values.api.env.OPENAI_CHAT_BASE_URL }}
+            - name: OPENAI_EMBED_BASE_URL
+              value: {{ .Values.api.env.OPENAI_EMBED_BASE_URL }}
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ai-copilot.fullname" . }}-secrets
+                  key: OPENAI_API_KEY
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ai-copilot.fullname" . }}-secrets
+                  key: JWT_SECRET
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ai-copilot.fullname" . }}-secrets
+                  key: GEMINI_API_KEY
+            - name: LLM_CACHE_PATH
+              value: {{ .Values.api.env.LLM_CACHE_PATH }}
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+{{- end }}

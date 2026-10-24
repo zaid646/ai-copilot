@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-copilot-api
+  labels:
+    app: ai-copilot
+    component: api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-copilot
+      component: api
+  template:
+    metadata:
+      labels:
+        app: ai-copilot
+        component: api
+    spec:
+      containers:
+        - name: api
+          image: registry.example.com/ai-copilot/api:latest
+          ports:
+            - containerPort: 8000
+              name: http
+          env:
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: "${POSTGRES_USER:-aiocopilot}"
+            - name: POSTGRES_PASSWORD
+              value: "${POSTGRES_PASSWORD:-aiocopilot}"
+            - name: POSTGRES_DB
+              value: "${POSTGRES_DB:-aiocopilot}"
+            - name: NEO4J_URI
+              value: "bolt://neo4j:7687"
+            - name: NEO4J_PASSWORD
+              value: "${NEO4J_PASSWORD:-aiocopilot}"
+            - name: CHAT_PROVIDER
+              value: "${CHAT_PROVIDER:-lmstudio}"
+            - name: EMBED_PROVIDER
+              value: "${EMBED_PROVIDER:-openai_compat}"
+            - name: OPENAI_CHAT_BASE_URL
+              value: "${OPENAI_CHAT_BASE_URL_HOST:-http://host.docker.internal:8100/v1}"
+            - name: OPENAI_EMBED_BASE_URL
+              value: "${OPENAI_EMBED_BASE_URL_HOST:-http://host.docker.internal:8101/v1}"
+            - name: OPENAI_API_KEY
+              value: "${OPENAI_API_KEY:-}"
+            - name: JWT_SECRET
+              value: "${JWT_SECRET:-change-me}"
+            - name: GEMINI_API_KEY
+              value: "${GEMINI_API_KEY:-}"
+            - name: LLM_CACHE_PATH
+              value: "/app/.cache/llm_cache.db"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+            requests:
+              cpu: "100m"
+              memory: "256Mi"

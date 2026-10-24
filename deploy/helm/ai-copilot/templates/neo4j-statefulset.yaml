@@ -1,0 +1,66 @@
+{{- if .Values.neo4j.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ai-copilot.fullname" . }}-neo4j
+  labels:
+    {{- include "ai-copilot.labels" . | nindent 4 }}
+    component: neo4j
+spec:
+  serviceName: {{ include "ai-copilot.fullname" . }}-neo4j
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ai-copilot.selectorLabels" . | nindent 6 }}
+      component: neo4j
+  template:
+    metadata:
+      labels:
+        {{- include "ai-copilot.selectorLabels" . | nindent 8 }}
+        component: neo4j
+    spec:
+      containers:
+        - name: neo4j
+          image: {{ .Values.neo4j.image.repository }}:{{ .Values.neo4j.image.tag }}
+          imagePullPolicy: {{ .Values.neo4j.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.neo4j.containerPort }}
+              name: bolt
+            - containerPort: {{ .Values.neo4j.httpPort }}
+              name: http
+          env:
+            - name: NEO4J_AUTH
+              value: {{ .Values.neo4j.auth.neo4jAuth }}
+            - name: NEO4J_server_memory_heap_initial__size
+              value: "512m"
+            - name: NEO4J_server_memory_heap_max__size
+              value: "1g"
+            - name: NEO4J_server_memory_pagecache_size
+              value: "512m"
+          resources:
+            {{- toYaml .Values.neo4j.resources | nindent 12 }}
+          volumeMounts:
+            - name: neo4j-data
+              mountPath: /data
+            - name: neo4j-logs
+              mountPath: /logs
+{{- if .Values.neo4j.persistence.enabled }}
+      volumeClaimTemplates:
+        - metadata:
+            name: neo4j-data
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: {{ .Values.neo4j.persistence.storageClass }}
+            resources:
+              requests:
+                storage: {{ .Values.neo4j.persistence.size }}
+        - metadata:
+            name: neo4j-logs
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            storageClassName: {{ .Values.neo4j.persistence.storageClass }}
+            resources:
+              requests:
+                storage: 2Gi
+{{- end }}
+{{- end }}
