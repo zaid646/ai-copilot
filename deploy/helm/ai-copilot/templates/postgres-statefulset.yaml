@@ -54,14 +54,14 @@ spec:
           configMap:
             name: {{ include "ai-copilot.fullname" . }}-config
 {{- if .Values.postgres.persistence.enabled }}
-      volumeClaimTemplates:
-        - metadata:
-            name: postgres-data
-          spec:
-            accessModes: ["ReadWriteOnce"]
-            storageClassName: {{ .Values.postgres.persistence.storageClass }}
-            resources:
-              requests:
-                storage: {{ .Values.postgres.persistence.size }}
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.postgres.persistence.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.postgres.persistence.size }}
 {{- end }}
 {{- end }}

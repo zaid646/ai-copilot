@@ -27,9 +27,9 @@ spec:
               name: http
           env:
             - name: POSTGRES_HOST
-              value: {{ .Values.api.env.POSTGRES_HOST }}
+              value: {{ .Values.api.env.POSTGRES_HOST | quote }}
             - name: POSTGRES_PORT
-              value: {{ .Values.api.env.POSTGRES_PORT }}
+              value: {{ .Values.api.env.POSTGRES_PORT | quote }}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -46,20 +46,20 @@ spec:
                   name: {{ include "ai-copilot.fullname" . }}-secrets
                   key: POSTGRES_DB
             - name: NEO4J_URI
-              value: {{ .Values.api.env.NEO4J_URI }}
+              value: {{ .Values.api.env.NEO4J_URI | quote }}
             - name: NEO4J_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "ai-copilot.fullname" . }}-secrets
                   key: NEO4J_PASSWORD
             - name: CHAT_PROVIDER
-              value: {{ .Values.api.env.CHAT_PROVIDER }}
+              value: {{ .Values.api.env.CHAT_PROVIDER | quote }}
             - name: EMBED_PROVIDER
-              value: {{ .Values.api.env.EMBED_PROVIDER }}
+              value: {{ .Values.api.env.EMBED_PROVIDER | quote }}
             - name: OPENAI_CHAT_BASE_URL
-              value: {{ .Values.api.env.OPENAI_CHAT_BASE_URL }}
+              value: {{ .Values.api.env.OPENAI_CHAT_BASE_URL | quote }}
             - name: OPENAI_EMBED_BASE_URL
-              value: {{ .Values.api.env.OPENAI_EMBED_BASE_URL }}
+              value: {{ .Values.api.env.OPENAI_EMBED_BASE_URL | quote }}
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -76,7 +76,7 @@ spec:
                   name: {{ include "ai-copilot.fullname" . }}-secrets
                   key: GEMINI_API_KEY
             - name: LLM_CACHE_PATH
-              value: {{ .Values.api.env.LLM_CACHE_PATH }}
+              value: {{ .Values.api.env.LLM_CACHE_PATH | quote }}
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
           livenessProbe:

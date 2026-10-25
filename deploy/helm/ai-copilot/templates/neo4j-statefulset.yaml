@@ -45,22 +45,22 @@ spec:
             - name: neo4j-logs
               mountPath: /logs
 {{- if .Values.neo4j.persistence.enabled }}
-      volumeClaimTemplates:
-        - metadata:
-            name: neo4j-data
-          spec:
-            accessModes: ["ReadWriteOnce"]
-            storageClassName: {{ .Values.neo4j.persistence.storageClass }}
-            resources:
-              requests:
-                storage: {{ .Values.neo4j.persistence.size }}
-        - metadata:
-            name: neo4j-logs
-          spec:
-            accessModes: ["ReadWriteOnce"]
-            storageClassName: {{ .Values.neo4j.persistence.storageClass }}
-            resources:
-              requests:
-                storage: 2Gi
+  volumeClaimTemplates:
+    - metadata:
+        name: neo4j-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.neo4j.persistence.storageClass }}
+        resources:
+          requests:
+            storage: {{ .Values.neo4j.persistence.size }}
+    - metadata:
+        name: neo4j-logs
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.neo4j.persistence.storageClass }}
+        resources:
+          requests:
+            storage: 2Gi
 {{- end }}
 {{- end }}

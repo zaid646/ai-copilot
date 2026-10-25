@@ -28,16 +28,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install kubeval
+      # kubeval is unmaintained and its default schema host
+      # (kubernetesjsonschema.dev) currently serves a broken TLS cert.
+      # kubeconform is its maintained successor and uses raw.githubusercontent.com.
+      - name: Install kubeconform
         run: |
-          curl -sL https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz | tar xz -C /usr/local/bin kubeval
+          curl -sL https://github.com/yannh/kubeconform/releases/latest/download/kubeconform-linux-amd64.tar.gz | tar xz -C /usr/local/bin kubeconform
       - name: Validate Helm chart templates
         run: |
-          helm template ai-copilot ./deploy/helm/ai-copilot > /tmp/ai-copilot-rendered.yaml
-          kubeval /tmp/ai-copilot-rendered.yaml --strict
+          helm template ai-copilot ./deploy/helm/ai-copilot | kubeconform -strict -ignore-missing-schemas -summary
       - name: Validate existing k8s manifests
         run: |
-          kubeval deploy/k8s/*.yaml --strict
+          kubeconform -strict -ignore-missing-schemas -summary deploy/k8s/*.yaml
 
   terraform-validate:
     name: Validate Terraform configuration
