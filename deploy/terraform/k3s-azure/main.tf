@@ -116,3 +116,14 @@ output "postgres_enabled" {
   value       = var.postgres_enabled
   description = "Whether PostgreSQL is enabled"
 }
+
+output "postgres_fqdn" {
+  value       = var.postgres_enabled ? azurerm_postgresql_flexible_server.postgres[0].fqdn : null
+  description = "Fully qualified domain name of the PostgreSQL server (if enabled)"
+}
+
+output "postgres_connection_string" {
+  value       = var.postgres_enabled ? "postgresql://aiocopilot@${azurerm_postgresql_flexible_server.postgres[0].fqdn}:5432/postgres" : null
+  description = "Connection string for the PostgreSQL server (if enabled)"
+  sensitive   = true
+}
