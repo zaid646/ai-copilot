@@ -1,0 +1,166 @@
+# Enterprise Analytics Copilot — Helm values
+# Override these values per environment (dev/staging/prod)
+
+# Global settings
+global:
+  namespace: default
+  imageRegistry: registry.example.com
+  imagePullPolicy: IfNotPresent
+
+# Common labels
+commonLabels:
+  app: ai-copilot
+  component: platform
+
+# --- FastAPI backend ---
+api:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: registry.example.com/ai-copilot/api
+    tag: latest
+    pullPolicy: IfNotPresent
+  containerPort: 8000
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8000
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilization: 50
+    targetMemoryUtilization: 70
+  env:
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    NEO4J_URI: bolt://neo4j:7687
+    CHAT_PROVIDER: openai_compat
+    EMBED_PROVIDER: openai_compat
+    OPENAI_CHAT_BASE_URL: http://host.docker.internal:8100/v1
+    OPENAI_EMBED_BASE_URL: http://host.docker.internal:8101/v1
+    LLM_CACHE_PATH: /app/.cache/llm_cache.db
+
+# --- Streamlit frontend ---
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: registry.example.com/ai-copilot/frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  containerPort: 8501
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 8501
+  resources:
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilization: 50
+  env:
+    API_BASE_URL: http://api:8000
+
+# --- Postgres ---
+postgres:
+  enabled: true
+  image:
+    repository: postgres
+    tag: 16-alpine
+    pullPolicy: IfNotPresent
+  containerPort: 5432
+  service:
+    port: 5432
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: standard
+  auth:
+    postgresUser: aiocopilot
+    postgresPassword: aiocopilot
+    postgresDB: aiocopilot
+  initDb:
+    configMap: ai-copilot-config
+
+# --- Neo4j ---
+neo4j:
+  enabled: true
+  image:
+    repository: neo4j
+    tag: 5.26
+    pullPolicy: IfNotPresent
+  containerPort: 7687
+  httpPort: 7474
+  service:
+    boltPort: 7687
+    httpPort: 7474
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+    requests:
+      cpu: "250m"
+      memory: "1Gi"
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: standard
+  auth:
+    neo4jPassword: aiocopilot
+    neo4jAuth: neo4j/${neo4jPassword}
+
+# --- ConfigMap ---
+configmap:
+  enabled: true
+  data:
+    POSTGRES_USER: aiocopilot
+    POSTGRES_PASSWORD: aiocopilot
+    POSTGRES_DB: aiocopilot
+    NEO4J_PASSWORD: aiocopilot
+    CHAT_PROVIDER: openai_compat
+    EMBED_PROVIDER: openai_compat
+    OPENAI_CHAT_BASE_URL_HOST: http://host.docker.internal:8100/v1
+    OPENAI_EMBED_BASE_URL_HOST: http://host.docker.internal:8101/v1
+    JWT_SECRET: change-me
+    GEMINI_API_KEY: ""
+
+# --- Secrets (separate from ConfigMap for sensitive values) ---
+secrets:
+  enabled: true
+  data:
+    # Base64-encoded values; update per environment
+    JWT_SECRET: Y2hhbmdlLW1l
+    OPENAI_API_KEY: ""
+    GEMINI_API_KEY: ""
+    NEO4J_PASSWORD: YWljb2NvcGlsb3Q=
+
+# --- Ingress (optional) ---
+ingress:
+  enabled: false
+  className: ""
+  host: ai-copilot.local
+  path: /
+  tls:
+    enabled: false

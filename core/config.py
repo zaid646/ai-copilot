@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     embed_model: str = "gemini-embedding-001"
     llm_temperature: float = 0.0
     llm_max_output_tokens: int = 2048
+    # Passed to OpenAI-compatible / LM Studio / Gemini requests. LM Studio
+    # accepts the field but does not echo it back; see README caveat.
+    llm_seed: int = 42
 
     # Chat provider: "lmstudio" (local, quota-free) or "gemini"
     chat_provider: str = "lmstudio"

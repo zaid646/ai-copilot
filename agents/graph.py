@@ -22,6 +22,7 @@ from agents.nodes.supervisor import (
 )
 from agents.state import AgentState
 from core.logging import get_logger, set_trace_id
+from tools.registry import current_tool_trace, reset_tool_trace
 
 log = get_logger("agents.graph")
 _CHECKPOINTER = MemorySaver()
@@ -74,10 +75,13 @@ def run_agent(
     history: list[dict[str, Any]] | None = None,
     max_iterations: int = 8,
     trace_id: str | None = None,
+    tenant_id: str = "default",
+    voice_mode: bool = False,
 ) -> dict[str, Any]:
     tid = trace_id or uuid4().hex
     set_trace_id(tid)
     start = time.perf_counter()
+    reset_tool_trace()
 
     hist = history
     if hist is None and conversation_id is not None:
@@ -87,7 +91,7 @@ def run_agent(
             hist = []
 
     try:
-        start_trace(tid, question, user_id, conversation_id)
+        start_trace(tid, question, user_id, conversation_id, tenant_id)
     except Exception:
         pass
 
@@ -95,6 +99,8 @@ def run_agent(
         "trace_id": tid,
         "user_id": user_id,
         "conversation_id": conversation_id,
+        "tenant_id": tenant_id,
+        "voice_mode": voice_mode,
         "question": question,
         "history": hist or [],
         "plan": [],
@@ -138,9 +144,10 @@ def run_agent(
 
     if conversation_id is not None:
         try:
-            save_message(conversation_id, "user", question, tid)
-            save_message(conversation_id, "assistant", final.get("answer", ""), tid)
+            save_message(conversation_id, "user", question, tid, tenant_id)
+            save_message(conversation_id, "assistant", final.get("answer", ""), tid, tenant_id)
         except Exception:
             pass
 
+    final["tool_calls"] = current_tool_trace()
     return final

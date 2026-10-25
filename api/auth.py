@@ -21,20 +21,36 @@ _bearer = HTTPBearer(auto_error=False)
 
 def authenticate(username: str, password: str) -> dict[str, Any] | None:
     """Return the user row (without hash) if credentials are valid, else None."""
-    row = query_one(
-        "SELECT user_id, username, role, password_hash FROM users WHERE username=%s",
-        (username,),
-    )
+    try:
+        row = query_one(
+            "SELECT user_id, username, role, password_hash, tenant_id "
+            "FROM users WHERE username=%s",
+            (username,),
+        )
+    except Exception:
+        # Pre-migration compatibility: default all users to the default tenant.
+        row = query_one(
+            "SELECT user_id, username, role, password_hash FROM users WHERE username=%s",
+            (username,),
+        )
     if not row:
         return None
     if not verify_password(password, row["password_hash"]):
         return None
-    return {"user_id": row["user_id"], "username": row["username"], "role": row["role"]}
+    return {
+        "user_id": row["user_id"],
+        "username": row["username"],
+        "role": row["role"],
+        "tenant_id": row.get("tenant_id") or "default",
+    }
 
 
 def issue_token(user: dict[str, Any]) -> str:
     return create_access_token(
-        username=user["username"], role=user["role"], user_id=user["user_id"]
+        username=user["username"],
+        role=user["role"],
+        user_id=user["user_id"],
+        tenant_id=user.get("tenant_id") or "default",
     )
 
 
@@ -61,6 +77,7 @@ def get_current_user(
         "user_id": payload.get("uid"),
         "username": payload.get("sub"),
         "role": payload.get("role"),
+        "tenant_id": payload.get("tenant_id") or "default",
     }
 
 

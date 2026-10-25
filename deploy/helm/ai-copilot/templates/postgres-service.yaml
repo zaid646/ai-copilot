@@ -1,0 +1,19 @@
+{{- if .Values.postgres.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-copilot.fullname" . }}-postgres
+  labels:
+    {{- include "ai-copilot.labels" . | nindent 4 }}
+    component: postgres
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "ai-copilot.selectorLabels" . | nindent 4 }}
+    component: postgres
+  ports:
+    - name: postgres
+      protocol: TCP
+      port: {{ .Values.postgres.service.port }}
+      targetPort: {{ .Values.postgres.containerPort }}
+{{- end }}

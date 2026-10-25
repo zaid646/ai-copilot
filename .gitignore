@@ -25,3 +25,20 @@ ml/checkpoints/
 ml/artifacts/
 docker/volumes/
 *.log
+
+# Local ASR/TTS model binaries (downloaded on demand; never committed)
+evals/fixtures/models/
+*.onnx
+*.onnx.json
+evals/voice_results/audio/
+
+*.token
+
+# Terraform local state / providers
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# MLflow local runs
+mlruns/

@@ -110,7 +110,9 @@ def extract_pdf_chunks(path: Path) -> list[dict]:
     return chunks
 
 
-def ingest_document(driver: neo4j.Driver, path: Path, force: bool = False) -> int:
+def ingest_document(
+    driver: neo4j.Driver, path: Path, force: bool = False, tenant_id: str = "default"
+) -> int:
     doc_id = path.stem
     with driver.session() as s:
         existing = s.run(
@@ -139,14 +141,16 @@ def ingest_document(driver: neo4j.Driver, path: Path, force: bool = False) -> in
         s.run(
             """
             MERGE (d:Document {id:$id})
-            SET d.title=$title, d.path=$path, d.chunks=$n
+            SET d.title=$title, d.path=$path, d.chunks=$n, d.tenant_id=$tenant_id
             WITH d
             UNWIND $rows AS row
-            CREATE (c:Chunk {id:row.id, text:row.text, page:row.page, embedding:row.embedding})
+            CREATE (c:Chunk {id:row.id, text:row.text, page:row.page,
+                             embedding:row.embedding, tenant_id:$tenant_id})
             CREATE (d)-[:HAS_CHUNK]->(c)
             """,
             id=doc_id,
             title=path.stem,
+            tenant_id=tenant_id,
             path=str(path),
             n=len(rows),
             rows=rows,
@@ -159,6 +163,7 @@ def main() -> None:
     configure_logging()
     parser = argparse.ArgumentParser()
     parser.add_argument("--force", action="store_true", help="re-ingest even if present")
+    parser.add_argument("--tenant", default="default", help="tenant_id stamped on chunks")
     args = parser.parse_args()
 
     pdfs = sorted(POLICY_DIR.glob("*.pdf"))
@@ -171,7 +176,7 @@ def main() -> None:
         ensure_indexes(driver)
         total = 0
         for pdf in pdfs:
-            total += ingest_document(driver, pdf, force=args.force)
+            total += ingest_document(driver, pdf, force=args.force, tenant_id=args.tenant)
         log.info("ingest complete", documents=len(pdfs), total_chunks=total)
     finally:
         driver.close()

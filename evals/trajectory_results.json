@@ -1,0 +1,444 @@
+{
+  "mode": "recorded",
+  "n_cases": 6,
+  "tool_choice_accuracy": 1.0,
+  "argument_validity": 1.0,
+  "order_correctness": 1.0,
+  "cases": [
+    {
+      "id": "gs-001",
+      "question": "Why did sales drop in West region last quarter, and what should we do?",
+      "plan": [
+        {
+          "agent": "sql_agent",
+          "task": "Compute WEST 2026Q3 headline KPIs and a category-level breakdown to locate the largest driver.",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        },
+        {
+          "agent": "graphrag_agent",
+          "task": "Retrieve retail policy on merchandising, display, and price adjustments to explain a sales drop.",
+          "args": {
+            "query": "merchandising display price adjustment sales drop",
+            "source_filter": "Retail"
+          }
+        },
+        {
+          "agent": "model_agent",
+          "task": "Forecast WEST demand for the largest-drop category over next 4 weeks.",
+          "args": {
+            "region": "WEST",
+            "category": "Beverages",
+            "horizon_weeks": 4
+          }
+        }
+      ],
+      "expected_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "breakdown"
+          }
+        },
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "merchandising display price adjustment",
+            "source_filter": "Retail"
+          }
+        },
+        {
+          "tool": "forecast_demand",
+          "args": {
+            "region": "WEST",
+            "horizon_weeks": 4
+          }
+        }
+      ],
+      "actual_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "Compute WEST 2026Q3 headline KPIs and a category-level breakdown to locate the largest driver."
+          }
+        },
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "merchandising display price adjustment sales drop",
+            "source_filter": "Retail"
+          }
+        },
+        {
+          "tool": "forecast_demand",
+          "args": {
+            "region": "WEST",
+            "category": "Beverages",
+            "horizon_weeks": 4
+          }
+        }
+      ],
+      "tool_choice_accuracy": 1.0,
+      "argument_validity": 1.0,
+      "order_correctness": 1.0,
+      "extra_calls": 0,
+      "details": [
+        {
+          "step": 0,
+          "expected_tool": "compute_kpi",
+          "actual_tool": "compute_kpi",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        },
+        {
+          "step": 1,
+          "expected_tool": "run_sql",
+          "actual_tool": "run_sql",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        },
+        {
+          "step": 2,
+          "expected_tool": "graphrag_search",
+          "actual_tool": "graphrag_search",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        },
+        {
+          "step": 3,
+          "expected_tool": "forecast_demand",
+          "actual_tool": "forecast_demand",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        }
+      ]
+    },
+    {
+      "id": "gs-002",
+      "question": "What was West region revenue in Q3 2026?",
+      "plan": [
+        {
+          "agent": "sql_agent",
+          "task": "Calculate total revenue for West region in Q3 2026.",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        }
+      ],
+      "expected_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        }
+      ],
+      "actual_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        }
+      ],
+      "tool_choice_accuracy": 1.0,
+      "argument_validity": 1.0,
+      "order_correctness": 1.0,
+      "extra_calls": 0,
+      "details": [
+        {
+          "step": 0,
+          "expected_tool": "compute_kpi",
+          "actual_tool": "compute_kpi",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        }
+      ]
+    },
+    {
+      "id": "gs-003",
+      "question": "Which category had the highest revenue in West region Q3 2026?",
+      "plan": [
+        {
+          "agent": "sql_agent",
+          "task": "Sum revenue by product category in West region during 2026Q3.",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        }
+      ],
+      "expected_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "revenue by product category"
+          }
+        }
+      ],
+      "actual_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": "2026Q3"
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "Sum revenue by product category in West region during 2026Q3."
+          }
+        }
+      ],
+      "tool_choice_accuracy": 1.0,
+      "argument_validity": 1.0,
+      "order_correctness": 1.0,
+      "extra_calls": 0,
+      "details": [
+        {
+          "step": 0,
+          "expected_tool": "compute_kpi",
+          "actual_tool": "compute_kpi",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        },
+        {
+          "step": 1,
+          "expected_tool": "run_sql",
+          "actual_tool": "run_sql",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        }
+      ]
+    },
+    {
+      "id": "gs-006",
+      "question": "Compare West Q2 vs Q3 revenue",
+      "plan": [
+        {
+          "agent": "sql_agent",
+          "task": "Compare WEST 2026Q2 and 2026Q3 revenue with a category breakdown to identify which categories drove the change.",
+          "args": {
+            "region": "WEST",
+            "quarter": [
+              "2026Q2",
+              "2026Q3"
+            ]
+          }
+        },
+        {
+          "agent": "graphrag_agent",
+          "task": "Retrieve retail policy on merchandising, display, and price adjustments relevant to sales trends.",
+          "args": {
+            "query": "merchandising display price adjustment sales trend",
+            "source_filter": "Retail"
+          }
+        }
+      ],
+      "expected_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": [
+              "2026Q2",
+              "2026Q3"
+            ]
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "Compare WEST 2026Q2 and 2026Q3 revenue"
+          }
+        }
+      ],
+      "actual_trajectory": [
+        {
+          "tool": "compute_kpi",
+          "args": {
+            "region": "WEST",
+            "quarter": [
+              "2026Q2",
+              "2026Q3"
+            ]
+          }
+        },
+        {
+          "tool": "run_sql",
+          "args": {
+            "query": "Compare WEST 2026Q2 and 2026Q3 revenue with a category breakdown to identify which categories drove the change."
+          }
+        },
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "merchandising display price adjustment sales trend",
+            "source_filter": "Retail"
+          }
+        }
+      ],
+      "tool_choice_accuracy": 1.0,
+      "argument_validity": 1.0,
+      "order_correctness": 1.0,
+      "extra_calls": 1,
+      "details": [
+        {
+          "step": 0,
+          "expected_tool": "compute_kpi",
+          "actual_tool": "compute_kpi",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        },
+        {
+          "step": 1,
+          "expected_tool": "run_sql",
+          "actual_tool": "run_sql",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        }
+      ]
+    },
+    {
+      "id": "gs-007",
+      "question": "Tell me about merchandising and display best practices",
+      "plan": [
+        {
+          "agent": "graphrag_agent",
+          "task": "Retrieve retail merchandising and display best practices.",
+          "args": {
+            "query": "merchandising display shelf placement endcap cross-merchandising",
+            "source_filter": "Retail"
+          }
+        },
+        {
+          "agent": "model_agent",
+          "task": "Summarize the retrieved merchandising guidelines into actionable best practices.",
+          "args": {}
+        }
+      ],
+      "expected_trajectory": [
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "merchandising display",
+            "source_filter": "Retail"
+          }
+        }
+      ],
+      "actual_trajectory": [
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "merchandising display shelf placement endcap cross-merchandising",
+            "source_filter": "Retail"
+          }
+        },
+        {
+          "tool": "forecast_demand",
+          "args": {
+            "region": "WEST",
+            "category": "Beverages",
+            "horizon_weeks": 4
+          }
+        }
+      ],
+      "tool_choice_accuracy": 1.0,
+      "argument_validity": 1.0,
+      "order_correctness": 1.0,
+      "extra_calls": 1,
+      "details": [
+        {
+          "step": 0,
+          "expected_tool": "graphrag_search",
+          "actual_tool": "graphrag_search",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        }
+      ]
+    },
+    {
+      "id": "gs-008",
+      "question": "What are the capitalization thresholds in the finance manual?",
+      "plan": [
+        {
+          "agent": "graphrag_agent",
+          "task": "Retrieve finance policy on capitalization approval thresholds.",
+          "args": {
+            "query": "capitalization approval threshold",
+            "source_filter": "Finance"
+          }
+        }
+      ],
+      "expected_trajectory": [
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "capitalization threshold",
+            "source_filter": "Finance"
+          }
+        }
+      ],
+      "actual_trajectory": [
+        {
+          "tool": "graphrag_search",
+          "args": {
+            "query": "capitalization approval threshold",
+            "source_filter": "Finance"
+          }
+        }
+      ],
+      "tool_choice_accuracy": 1.0,
+      "argument_validity": 1.0,
+      "order_correctness": 1.0,
+      "extra_calls": 0,
+      "details": [
+        {
+          "step": 0,
+          "expected_tool": "graphrag_search",
+          "actual_tool": "graphrag_search",
+          "tool_ok": true,
+          "args_ok": true,
+          "missing_args": []
+        }
+      ]
+    }
+  ]
+}

@@ -6,6 +6,7 @@ from typing import Any
 from agents.nodes.base import _load_prompt
 from agents.tracelib import traced
 from core.llm import chat_json
+from voice.speech_style import inject as inject_voice_style
 
 
 @traced("action_agent")
@@ -16,6 +17,8 @@ def action_agent_node(state: dict[str, Any]) -> dict[str, Any]:
         "history": state.get("history", [])[-3:],
     }
     prompt = _load_prompt("action_agent", context)
+    if state.get("voice_mode"):
+        prompt = inject_voice_style(prompt)
     try:
         out = chat_json("Synthesize a grounded answer. Be precise with numbers and cite policy.", prompt)
         # Determine whether the answer is SQL-grounded or document-grounded so
